@@ -1,0 +1,963 @@
+const RECIPES = 
+[
+  {
+    "id": "morel-cream-chicken-rice",
+    "name": "法式羊肚菌奶油鸡饭",
+    "category": "耗时",
+    "time": 60,
+    "servings": 2,
+    "tags": ["Hard"],
+    "craving": 1.0,
+    "link": "http://xhslink.com/o/8Wi7w5Qdwsi",
+    "instruction": "详见小红书链接",
+    "ingredients": [
+      { "name": "羊肚菌", "amount": 1, "unit": "适量" },
+      { "name": "奶油", "amount": 1, "unit": "适量" },
+      { "name": "鸡腿肉", "amount": 1, "unit": "适量" },
+      { "name": "米饭", "amount": 1, "unit": "适量" }
+    ]
+  },
+  {
+    "id": "miso-soy-vegetable-soup",
+    "name": "味增豆乳蔬菜汤",
+    "category": "快手",
+    "time": 25,
+    "servings": 2,
+    "tags": ["Easy", "Vegan"],
+    "craving": 1.0,
+    "instruction": "将味增、豆浆混合调匀，加入切块豆腐、胡萝卜丝和西葫芦片煮沸，最后拌入花生酱，稍煮即可。",
+    "ingredients": [
+      { "name": "豆浆", "amount": 1, "unit": "适量" },
+      { "name": "豆腐", "amount": 1, "unit": "适量" },
+      { "name": "味增", "amount": 1, "unit": "适量" },
+      { "name": "花生酱", "amount": 1, "unit": "适量" },
+      { "name": "胡萝卜", "amount": 1, "unit": "适量" },
+      { "name": "西葫芦", "amount": 1, "unit": "适量" }
+    ]
+  },
+  {
+    "id": "thai-basil-pork-rice",
+    "name": "泰式猪肉打抛饭",
+    "category": "快手",
+    "time": 25,
+    "servings": 2,
+    "tags": ["Easy"],
+    "craving": 1.0,
+    "instruction": "将猪肉馅与蒜末、生抽、蚝油拌匀，加入切碎的干辣椒和罗勒叶翻炒至熟，最后打入鸡蛋快速搅拌均匀即可。",
+    "ingredients": [
+      { "name": "猪肉馅", "amount": 1, "unit": "适量" },
+      { "name": "干辣椒", "amount": 1, "unit": "适量" },
+      { "name": "蒜末", "amount": 1, "unit": "适量" },
+      { "name": "蚝油", "amount": 1, "unit": "适量" },
+      { "name": "罗勒", "amount": 1, "unit": "适量" },
+      { "name": "鸡蛋", "amount": 1, "unit": "适量" },
+      { "name": "生抽", "amount": 1, "unit": "适量" }
+    ]
+  },
+  {
+    "id": "turmeric-kale-bake",
+    "name": "姜黄羽衣甘蓝",
+    "category": "快手",
+    "time": 35,
+    "servings": 2,
+    "tags": ["Easy", "Vegan", "Bake"],
+    "craving": 1.0,
+    "instruction": "将土豆、洋葱切块，和羽衣甘蓝、豆腐一起拌匀，撒上姜黄调味，烤箱烤至熟即可。",
+    "ingredients": [
+      { "name": "羽衣甘蓝", "amount": 1, "unit": "适量" },
+      { "name": "土豆", "amount": 1, "unit": "适量" },
+      { "name": "豆腐", "amount": 1, "unit": "适量" },
+      { "name": "米饭", "amount": 1, "unit": "适量" },
+      { "name": "姜黄", "amount": 1, "unit": "适量" },
+      { "name": "洋葱", "amount": 1, "unit": "适量" }
+    ]
+  },
+  {
+    "id": "cold-tofu-sesame-noodles",
+    "name": "嫩豆腐麻酱豆乳凉面",
+    "category": "快手",
+    "time": 25,
+    "servings": 2,
+    "tags": ["Easy", "凉", "Vegan"],
+    "craving": 1.0,
+    "instruction": "将豆腐切块，拌入花生酱、豆乳和麻酱调成酱汁；鸡腿肉、口蘑和虾分别煎熟；将酱汁、鸡肉、蘑菇、虾和蛋白质混合，撒上花生碎，即可食用。",
+    "ingredients": [
+      { "name": "豆腐", "amount": 1, "unit": "适量" },
+      { "name": "花生酱", "amount": 1, "unit": "适量" },
+      { "name": "虾", "amount": 1, "unit": "适量" },
+      { "name": "鸡腿肉", "amount": 1, "unit": "适量" },
+      { "name": "口蘑", "amount": 1, "unit": "适量" },
+      { "name": "麻酱", "amount": 1, "unit": "适量" },
+      { "name": "豆乳", "amount": 1, "unit": "适量" }
+    ]
+  },
+  {
+    "id": "salmon-miso-cream-rice",
+    "name": "三文鱼番茄味增奶油饭",
+    "category": "快手",
+    "time": 30,
+    "servings": 2,
+    "tags": ["Easy"],
+    "craving": 1.0,
+    "instruction": "将三文鱼切块，用盐和胡椒稍腌。热锅融奶油，加入蒜末和洋葱炒香，倒入蘑菇和番茄块翻炒。加入味增、味淋、番茄膏、米酒调味，稍煮。另起锅把米饭加热，拌入奶酪和欧芹碎。将炒好的酱汁浇在米饭上，放上三文鱼块即可。",
+    "ingredients": [
+      { "name": "三文鱼", "amount": 1, "unit": "适量" },
+      { "name": "番茄", "amount": 1, "unit": "适量" },
+      { "name": "味增", "amount": 1, "unit": "适量" },
+      { "name": "奶油", "amount": 1, "unit": "适量" },
+      { "name": "番茄膏", "amount": 1, "unit": "适量" },
+      { "name": "洋葱", "amount": 1, "unit": "适量" },
+      { "name": "大蒜", "amount": 1, "unit": "适量" },
+      { "name": "蘑菇", "amount": 1, "unit": "适量" },
+      { "name": "米酒", "amount": 1, "unit": "适量" },
+      { "name": "味淋", "amount": 1, "unit": "适量" },
+      { "name": "欧芹碎", "amount": 1, "unit": "适量" },
+      { "name": "奶酪", "amount": 1, "unit": "适量" },
+      { "name": "米饭", "amount": 1, "unit": "适量" }
+    ]
+  },
+  {
+    "id": "sweet-sour-brussels",
+    "name": "糖醋孢子甘蓝",
+    "category": "快手",
+    "time": 25,
+    "servings": 2,
+    "tags": ["Easy", "Vegan"],
+    "craving": 0.5,
+    "instruction": "将大蒜粉、奶酪、孢子甘蓝、巴萨米克醋、橄榄油、橙汁、碧根果、红薯、蔓越莓、蜂蜜、辣酱和酱油混合，拌匀后烤或煎至软熟呈糖醋味。",
+    "ingredients": [
+      { "name": "孢子甘蓝", "amount": 1, "unit": "适量" },
+      { "name": "红薯", "amount": 1, "unit": "适量" },
+      { "name": "蔓越莓/果干", "amount": 1, "unit": "适量" },
+      { "name": "碧根果/坚果", "amount": 1, "unit": "适量" },
+      { "name": "奶酪", "amount": 1, "unit": "适量" },
+      { "name": "橄榄油", "amount": 1, "unit": "适量" },
+      { "name": "大蒜粉", "amount": 1, "unit": "适量" },
+      { "name": "巴萨米克醋", "amount": 1, "unit": "适量" },
+      { "name": "蜂蜜", "amount": 1, "unit": "适量" },
+      { "name": "辣酱", "amount": 1, "unit": "适量" },
+      { "name": "酱油", "amount": 1, "unit": "适量" },
+      { "name": "橙汁", "amount": 1, "unit": "适量" }
+    ]
+  },
+  {
+    "id": "baked-sushi",
+    "name": "烤寿司",
+    "category": "快手",
+    "time": 30,
+    "servings": 2,
+    "tags": ["Easy"],
+    "craving": 1.0,
+    "instruction": "将三文鱼切片拌入美乃滋和辣酱，铺在海苔上，加入米饭和黄瓜，卷起后烤至表面微焦即可。",
+    "ingredients": [
+      { "name": "三文鱼", "amount": 1, "unit": "适量" },
+      { "name": "米饭", "amount": 1, "unit": "适量" },
+      { "name": "黄瓜", "amount": 1, "unit": "适量" },
+      { "name": "美乃滋", "amount": 1, "unit": "适量" },
+      { "name": "海苔", "amount": 1, "unit": "适量" },
+      { "name": "辣酱", "amount": 1, "unit": "适量" }
+    ]
+  },
+  {
+    "id": "bacon-vegetable-soup",
+    "name": "法式培根蔬菜汤",
+    "category": "快手",
+    "time": 35,
+    "servings": 2,
+    "tags": ["Easy"],
+    "craving": 1.0,
+    "instruction": "先将培根切块煎至微脆，取出备用。锅中加入少许培根油，炒香洋葱、胡萝卜和口蘑，随后加入切块土豆和卷心菜翻炒。倒入适量清水，放入西红柿块和培根，加入盐和胡椒调味，煮沸后转小火炖至蔬菜软烂即可。",
+    "ingredients": [
+      { "name": "培根", "amount": 1, "unit": "适量" },
+      { "name": "洋葱", "amount": 1, "unit": "适量" },
+      { "name": "卷心菜", "amount": 1, "unit": "适量" },
+      { "name": "西红柿", "amount": 1, "unit": "适量" },
+      { "name": "胡萝卜", "amount": 1, "unit": "适量" },
+      { "name": "土豆", "amount": 1, "unit": "适量" },
+      { "name": "口蘑", "amount": 1, "unit": "适量" }
+    ]
+  },
+  {
+    "id": "braised-chicken-chestnut",
+    "name": "红烧板栗鸡",
+    "category": "快手",
+    "time": 35,
+    "servings": 2,
+    "tags": ["Easy"],
+    "craving": 1.0,
+    "instruction": "先将鸡腿肉切块，用少量油煎至表面微黄。加入切好的洋葱、姜黄和八角翻炒出香味。倒入适量清水，放入板栗、冰糖、香叶，加入酱油调味。小火炖煮至鸡肉熟透、汤汁浓稠，即可出锅。",
+    "ingredients": [
+      { "name": "鸡腿肉", "amount": 1, "unit": "适量" },
+      { "name": "板栗", "amount": 1, "unit": "适量" },
+      { "name": "姜黄", "amount": 1, "unit": "适量" },
+      { "name": "洋葱", "amount": 1, "unit": "适量" },
+      { "name": "八角", "amount": 1, "unit": "适量" },
+      { "name": "香叶", "amount": 1, "unit": "适量" },
+      { "name": "冰糖", "amount": 1, "unit": "适量" },
+      { "name": "酱油", "amount": 1, "unit": "适量" }
+    ]
+  },
+  {
+    "id": "oden",
+    "name": "关东煮",
+    "category": "快手",
+    "time": 40,
+    "servings": 2,
+    "tags": ["Easy", "Vegan"],
+    "craving": 1.0,
+    "instruction": "将关东煮酱汁与适量水煮沸，加入洋葱、白萝卜、胡萝卜、苹果、香菇、裙带菜，放入木鱼花，炖至蔬菜软烂即可。",
+    "ingredients": [
+      { "name": "白萝卜", "amount": 1, "unit": "适量" },
+      { "name": "裙带菜", "amount": 1, "unit": "适量" },
+      { "name": "香菇", "amount": 1, "unit": "适量" },
+      { "name": "胡萝卜", "amount": 1, "unit": "适量" },
+      { "name": "苹果", "amount": 1, "unit": "适量" },
+      { "name": "洋葱", "amount": 1, "unit": "适量" },
+      { "name": "木鱼花", "amount": 1, "unit": "适量" },
+      { "name": "关东煮酱汁", "amount": 1, "unit": "适量" }
+    ]
+  },
+  {
+    "id": "octopus-avocado-salad",
+    "name": "章鱼牛油果沙拉",
+    "category": "快手",
+    "time": 20,
+    "servings": 2,
+    "tags": ["Easy", "凉"],
+    "craving": 1.0,
+    "instruction": "将章鱼切块，牛油果切片，所有材料混合，加入果醋调味，撒上罗勒叶和青酱，最后拌入马苏里拉即可。",
+    "ingredients": [
+      { "name": "章鱼", "amount": 1, "unit": "适量" },
+      { "name": "牛油果", "amount": 1, "unit": "适量" },
+      { "name": "马苏里拉", "amount": 1, "unit": "适量" },
+      { "name": "青酱", "amount": 1, "unit": "适量" },
+      { "name": "罗勒叶", "amount": 1, "unit": "适量" },
+      { "name": "果醋", "amount": 1, "unit": "适量" }
+    ]
+  },
+  {
+    "id": "five-spice-ciabatta",
+    "name": "五香恰巴塔",
+    "category": "烘焙",
+    "time": 90,
+    "servings": 2,
+    "tags": ["Bake", "Vegan"],
+    "craving": 1.0,
+    "instruction": "将面粉、冰水、酵母、盐混合，加入油搅拌均匀，冷藏30分钟，进行拉伸折叠并再次冷藏30分钟，重复一次。放入馅料，室温发酵至两倍大，分割后二次发酵，烤箱200℃烤40分钟。",
+    "ingredients": [
+      { "name": "面粉", "amount": 1, "unit": "适量" },
+      { "name": "彩椒", "amount": 1, "unit": "适量" },
+      { "name": "火腿", "amount": 1, "unit": "适量" },
+      { "name": "五香粉", "amount": 1, "unit": "适量" },
+      { "name": "胡椒粉", "amount": 1, "unit": "适量" },
+      { "name": "酵母", "amount": 1, "unit": "适量" }
+    ]
+  },
+  {
+    "id": "paprika-salmon",
+    "name": "甜椒三文鱼",
+    "category": "快手",
+    "time": 25,
+    "servings": 2,
+    "tags": ["Easy"],
+    "craving": 1.0,
+    "instruction": "将三文鱼切块，用橄榄油、盐和辣椒粉腌制10分钟。将甜椒粉、洋葱粉、蒜粉混合，裹在鱼块表面，撒上玉米淀粉。平底锅加热，放入鱼块，两面煎至金黄。加入少量冰糖翻炒，最后加入切好的沙拉菜和牛油果，快速拌匀即成。",
+    "ingredients": [
+      { "name": "三文鱼", "amount": 1, "unit": "适量" },
+      { "name": "甜椒粉", "amount": 1, "unit": "适量" },
+      { "name": "冰糖", "amount": 1, "unit": "适量" },
+      { "name": "牛油果", "amount": 1, "unit": "适量" },
+      { "name": "沙拉菜", "amount": 1, "unit": "适量" },
+      { "name": "玉米淀粉", "amount": 1, "unit": "适量" },
+      { "name": "大蒜粉", "amount": 1, "unit": "适量" },
+      { "name": "辣椒粉", "amount": 1, "unit": "适量" },
+      { "name": "洋葱粉", "amount": 1, "unit": "适量" },
+      { "name": "橄榄油", "amount": 1, "unit": "适量" }
+    ]
+  },
+  {
+    "id": "spicy-honey-beef-bowl",
+    "name": "辣蜂蜜红薯牛肉碗",
+    "category": "快手",
+    "time": 30,
+    "servings": 2,
+    "tags": ["Easy"],
+    "craving": 1.0,
+    "instruction": "将红薯切块蒸熟，牛肉馅加盐、胡椒粉、辣椒粉和大蒜粉炒至变色，加入牛油果块翻炒，淋上辣蜂蜜调味，最后与蒸好的红薯混合即可。",
+    "ingredients": [
+      { "name": "红薯", "amount": 1, "unit": "适量" },
+      { "name": "牛肉馅", "amount": 1, "unit": "适量" },
+      { "name": "cottage cheese", "amount": 1, "unit": "适量" },
+      { "name": "牛油果", "amount": 1, "unit": "适量" },
+      { "name": "辣蜂蜜", "amount": 1, "unit": "适量" },
+      { "name": "胡椒粉", "amount": 1, "unit": "适量" },
+      { "name": "辣椒粉", "amount": 1, "unit": "适量" },
+      { "name": "大蒜粉", "amount": 1, "unit": "适量" }
+    ]
+  },
+  {
+    "id": "waterless-chicken-pot",
+    "name": "无水鸡肉锅",
+    "category": "快手",
+    "time": 30,
+    "servings": 2,
+    "tags": ["Easy"],
+    "craving": 1.0,
+    "instruction": "先将鸡腿肉切块，用酱油和味淋腌制片刻。锅中加入少量油，放入洋葱、胡萝卜和卷心菜翻炒至稍软。加入腌好的鸡肉继续翻炒至变色。加入适量水，盖上锅盖小火焖煮至鸡肉熟透。出锅前撒上葱花即可。",
+    "ingredients": [
+      { "name": "鸡腿肉", "amount": 1, "unit": "适量" },
+      { "name": "胡萝卜", "amount": 1, "unit": "适量" },
+      { "name": "洋葱", "amount": 1, "unit": "适量" },
+      { "name": "卷心菜", "amount": 1, "unit": "适量" },
+      { "name": "酱油", "amount": 1, "unit": "适量" },
+      { "name": "味淋", "amount": 1, "unit": "适量" },
+      { "name": "葱花", "amount": 1, "unit": "适量" }
+    ]
+  },
+  {
+    "id": "shrimp-salad",
+    "name": "虾仁沙拉",
+    "category": "快手",
+    "time": 15,
+    "servings": 2,
+    "tags": ["Easy"],
+    "craving": 1.0,
+    "instruction": "将水煮蛋切块，牛油果切片，虾煮熟，混合加入马苏里拉，拌匀即可。",
+    "ingredients": [
+      { "name": "虾", "amount": 1, "unit": "适量" },
+      { "name": "牛油果", "amount": 1, "unit": "适量" },
+      { "name": "水煮蛋", "amount": 1, "unit": "适量" },
+      { "name": "马苏里拉", "amount": 1, "unit": "适量" }
+    ]
+  },
+  {
+    "id": "mixed-vegetables",
+    "name": "拌菜",
+    "category": "快手",
+    "time": 20,
+    "servings": 2,
+    "tags": ["Easy", "凉", "Vegan"],
+    "craving": 1.0,
+    "instruction": "将味增、巴萨米克醋、生抽、蚝油、辣椒粉混合调成酱汁；将杏鲍菇、花生酱、葱花、蒜末拌匀；加入西兰花翻炒至熟；将酱汁倒入菜中，撒上白芝麻即可。",
+    "ingredients": [
+      { "name": "西兰花", "amount": 1, "unit": "适量" },
+      { "name": "杏鲍菇", "amount": 1, "unit": "适量" },
+      { "name": "蒜末", "amount": 1, "unit": "适量" },
+      { "name": "葱花", "amount": 1, "unit": "适量" },
+      { "name": "花生酱", "amount": 1, "unit": "适量" },
+      { "name": "白芝麻", "amount": 1, "unit": "适量" },
+      { "name": "味增", "amount": 1, "unit": "适量" },
+      { "name": "生抽", "amount": 1, "unit": "适量" },
+      { "name": "巴萨米克醋", "amount": 1, "unit": "适量" },
+      { "name": "蚝油", "amount": 1, "unit": "适量" },
+      { "name": "辣椒粉", "amount": 1, "unit": "适量" }
+    ]
+  },
+  {
+    "id": "scallop-shrimp-miso-soup",
+    "name": "和风扇贝豆乳味增汤",
+    "category": "快手",
+    "time": 25,
+    "servings": 2,
+    "tags": ["Easy"],
+    "craving": 1.0,
+    "instruction": "将高汤、味增混合加热，加入切块的扇贝、虾仁、洋葱、胡萝卜、葱，煮至熟透，最后倒入豆乳，稍微加热即可。",
+    "ingredients": [
+      { "name": "扇贝", "amount": 1, "unit": "适量" },
+      { "name": "虾仁", "amount": 1, "unit": "适量" },
+      { "name": "胡萝卜", "amount": 1, "unit": "适量" },
+      { "name": "洋葱", "amount": 1, "unit": "适量" },
+      { "name": "高汤", "amount": 1, "unit": "适量" },
+      { "name": "味增", "amount": 1, "unit": "适量" },
+      { "name": "豆乳", "amount": 1, "unit": "适量" },
+      { "name": "葱", "amount": 1, "unit": "适量" }
+    ]
+  },
+  {
+    "id": "creamy-salmon-spinach-risotto",
+    "name": "奶油蘑菇三文鱼菠菜烩饭",
+    "category": "快手",
+    "time": 30,
+    "servings": 2,
+    "tags": ["Easy"],
+    "craving": 1.0,
+    "instruction": "将三文鱼切块，口蘑切片，菠菜洗净。锅中加油，先炒蘑菇至软，加入三文鱼块翻炒至变色。倒入淡奶油，轻煮至浓稠。加入米饭翻匀，使酱汁包裹饭粒。最后放入菠菜翻炒至熟，撒盐调味，即可出锅。",
+    "ingredients": [
+      { "name": "三文鱼", "amount": 1, "unit": "适量" },
+      { "name": "口蘑", "amount": 1, "unit": "适量" },
+      { "name": "米饭", "amount": 1, "unit": "适量" },
+      { "name": "淡奶油", "amount": 1, "unit": "适量" },
+      { "name": "菠菜", "amount": 1, "unit": "适量" }
+    ]
+  },
+  {
+    "id": "poached-vegetables",
+    "name": "水煮菜",
+    "category": "快手",
+    "time": 25,
+    "servings": 2,
+    "tags": ["Easy", "Vegan"],
+    "craving": 1.0,
+    "instruction": "热锅加油，放蒜末、葱、胡萝卜、香菇翻炒至香；加入小米辣、巴萨米克醋、生抽、白糖调味；倒入水煮沸，放入豆腐块煮熟；撒入粉丝焖软，淋上香油即可。",
+    "ingredients": [
+      { "name": "粉丝", "amount": 1, "unit": "适量" },
+      { "name": "葱", "amount": 1, "unit": "适量" },
+      { "name": "番茄", "amount": 1, "unit": "适量" },
+      { "name": "胡萝卜", "amount": 1, "unit": "适量" },
+      { "name": "香菇", "amount": 1, "unit": "适量" },
+      { "name": "豆腐", "amount": 1, "unit": "适量" },
+      { "name": "蒜末", "amount": 1, "unit": "适量" },
+      { "name": "小米辣", "amount": 1, "unit": "适量" },
+      { "name": "生抽", "amount": 1, "unit": "适量" },
+      { "name": "巴萨米克醋", "amount": 1, "unit": "适量" },
+      { "name": "香油", "amount": 1, "unit": "适量" },
+      { "name": "白糖", "amount": 1, "unit": "适量" }
+    ]
+  },
+  {
+    "id": "passionfruit-beef-noodles",
+    "name": "薄荷百香果酸汤牛肉粉",
+    "category": "快手",
+    "time": 30,
+    "servings": 2,
+    "tags": ["Easy"],
+    "craving": 1.0,
+    "instruction": "牛肉馅加玉米淀粉拌匀，炒至变色。加入泡椒、番茄、葱姜蒜翻炒出香味。倒入适量水，放入百香果调味，煮沸后下牛肉丸子。最后撒上薄荷即可出锅。",
+    "ingredients": [
+      { "name": "牛肉馅", "amount": 1, "unit": "适量" },
+      { "name": "百香果", "amount": 1, "unit": "适量" },
+      { "name": "玉米淀粉", "amount": 1, "unit": "适量" },
+      { "name": "葱姜蒜", "amount": 1, "unit": "适量" },
+      { "name": "泡椒", "amount": 1, "unit": "适量" },
+      { "name": "薄荷", "amount": 1, "unit": "适量" },
+      { "name": "番茄", "amount": 1, "unit": "适量" }
+    ]
+  },
+  {
+    "id": "curry-beef-noodles",
+    "name": "拌面",
+    "category": "快手",
+    "time": 25,
+    "servings": 2,
+    "tags": ["Easy"],
+    "craving": 1.0,
+    "instruction": "先将面条煮熟沥干。将牛肉馅炒熟，加入洋葱粒、咖喱、孜然粉、辣椒粉调味。把炒好的肉和面条拌匀，撒上葱花、黄瓜丝和冰糖即可。",
+    "ingredients": [
+      { "name": "面", "amount": 1, "unit": "适量" },
+      { "name": "黄瓜丝", "amount": 1, "unit": "适量" },
+      { "name": "咖喱", "amount": 1, "unit": "适量" },
+      { "name": "辣椒粉", "amount": 1, "unit": "适量" },
+      { "name": "孜然粉", "amount": 1, "unit": "适量" },
+      { "name": "冰糖", "amount": 1, "unit": "适量" },
+      { "name": "洋葱粒", "amount": 1, "unit": "适量" },
+      { "name": "牛肉馅", "amount": 1, "unit": "适量" },
+      { "name": "葱花", "amount": 1, "unit": "适量" }
+    ]
+  },
+  {
+    "id": "coconut-chicken",
+    "name": "椰子鸡",
+    "category": "快手",
+    "time": 40,
+    "servings": 2,
+    "tags": ["Easy"],
+    "craving": 1.0,
+    "instruction": "用椰子水煮沸后，加入鸡腿肉、干菌、枸杞、甜玉米、生蚝、红枣和椰子肉，炖至鸡肉熟透，最后加入盐调味即可。",
+    "ingredients": [
+      { "name": "鸡腿肉", "amount": 1, "unit": "适量" },
+      { "name": "椰子肉", "amount": 1, "unit": "适量" },
+      { "name": "椰子水", "amount": 1, "unit": "适量" },
+      { "name": "甜玉米", "amount": 1, "unit": "适量" },
+      { "name": "生蚝", "amount": 1, "unit": "适量" },
+      { "name": "干菌", "amount": 1, "unit": "适量" },
+      { "name": "红枣", "amount": 1, "unit": "适量" },
+      { "name": "枸杞", "amount": 1, "unit": "适量" }
+    ]
+  },
+  {
+    "id": "japanese-soup-curry",
+    "name": "日式汤咖喱",
+    "category": "快手",
+    "time": 35,
+    "servings": 2,
+    "tags": ["Easy"],
+    "craving": 1.0,
+    "instruction": "先将洋葱、蒜末、姜末炒香，加入丁香、八角和咖喱粉继续翻炒，倒入高汤煮沸，放入鸡腿肉块煮熟，加入果酱、蜂蜜调味，最后放入饭拌匀即可。",
+    "ingredients": [
+      { "name": "鸡腿肉", "amount": 1, "unit": "适量" },
+      { "name": "洋葱", "amount": 1, "unit": "适量" },
+      { "name": "蒜末", "amount": 1, "unit": "适量" },
+      { "name": "姜末", "amount": 1, "unit": "适量" },
+      { "name": "咖喱粉", "amount": 1, "unit": "适量" },
+      { "name": "八角", "amount": 1, "unit": "适量" },
+      { "name": "丁香", "amount": 1, "unit": "适量" },
+      { "name": "果酱", "amount": 1, "unit": "适量" },
+      { "name": "蜂蜜", "amount": 1, "unit": "适量" },
+      { "name": "高汤", "amount": 1, "unit": "适量" },
+      { "name": "米饭", "amount": 1, "unit": "适量" }
+    ]
+  },
+  {
+    "id": "bean-vegetable-soup",
+    "name": "杂豆蔬菜汤",
+    "category": "快手",
+    "time": 35,
+    "servings": 2,
+    "tags": ["Easy", "Vegan"],
+    "craving": 1.0,
+    "instruction": "将番茄、番茄膏、白洋葱、白豆、胡萝卜和蔬菜切块，放入锅中加水煮沸，转小火炖至蔬菜软烂，调味后即可食用。",
+    "ingredients": [
+      { "name": "白洋葱", "amount": 1, "unit": "适量" },
+      { "name": "胡萝卜", "amount": 1, "unit": "适量" },
+      { "name": "白豆", "amount": 1, "unit": "适量" },
+      { "name": "蔬菜", "amount": 1, "unit": "适量" },
+      { "name": "番茄膏", "amount": 1, "unit": "适量" },
+      { "name": "番茄", "amount": 1, "unit": "适量" }
+    ]
+  },
+  {
+    "id": "pepper-beef-ribs",
+    "name": "彩椒牛肋条+芝麻土豆胡萝卜",
+    "category": "快手",
+    "time": 35,
+    "servings": 2,
+    "tags": ["Easy"],
+    "craving": 0.5,
+    "instruction": "将牛肋条切块，用油炒至变色；加入切好的彩椒、洋葱、胡萝卜和土豆块一起翻炒至熟；撒上白芝麻，调味后出锅。",
+    "ingredients": [
+      { "name": "牛肋条", "amount": 1, "unit": "适量" },
+      { "name": "彩椒", "amount": 1, "unit": "适量" },
+      { "name": "土豆", "amount": 1, "unit": "适量" },
+      { "name": "胡萝卜", "amount": 1, "unit": "适量" },
+      { "name": "白芝麻", "amount": 1, "unit": "适量" },
+      { "name": "洋葱", "amount": 1, "unit": "适量" }
+    ]
+  },
+  {
+    "id": "pasta-salad-salmon",
+    "name": "意面沙拉+烤三文鱼",
+    "category": "快手",
+    "time": 35,
+    "servings": 2,
+    "tags": ["Easy"],
+    "craving": 1.0,
+    "instruction": "将三文鱼用盐、黑胡椒和蒜末腌制，烤箱预热至200°C，烤约12分钟至熟。意面煮熟沥干，加入橄榄油拌匀。将烤好的三文鱼切块，和奶酪、番茄、生菜、欧芹碎一起放入碗中，加入意面，拌匀即成。",
+    "ingredients": [
+      { "name": "意面", "amount": 1, "unit": "适量" },
+      { "name": "三文鱼", "amount": 1, "unit": "适量" },
+      { "name": "橄榄油", "amount": 1, "unit": "适量" },
+      { "name": "蒜末", "amount": 1, "unit": "适量" },
+      { "name": "欧芹碎", "amount": 1, "unit": "适量" },
+      { "name": "生菜", "amount": 1, "unit": "适量" },
+      { "name": "番茄", "amount": 1, "unit": "适量" },
+      { "name": "奶酪", "amount": 1, "unit": "适量" },
+      { "name": "黑胡椒", "amount": 1, "unit": "适量" }
+    ]
+  },
+  {
+    "id": "chanterelle-sausage-pasta",
+    "name": "鸡油菌板栗香肠意面",
+    "category": "快手",
+    "time": 30,
+    "servings": 2,
+    "tags": ["Easy"],
+    "craving": 1.0,
+    "instruction": "将意面煮熟，捞出备用。热锅加入鸡油菌翻炒至熟，加入大蒜、香肠、扇贝继续翻炒，倒入奶酪和黑胡椒调味。将煮好的意面与炒好的材料混合，加入切碎的栗子，翻匀后即可上桌。",
+    "ingredients": [
+      { "name": "rigatoni", "amount": 1, "unit": "适量" },
+      { "name": "鸡油菌", "amount": 1, "unit": "适量" },
+      { "name": "栗子", "amount": 1, "unit": "适量" },
+      { "name": "扇贝", "amount": 1, "unit": "适量" },
+      { "name": "香肠", "amount": 1, "unit": "适量" },
+      { "name": "奶酪", "amount": 1, "unit": "适量" },
+      { "name": "大蒜", "amount": 1, "unit": "适量" },
+      { "name": "黑胡椒", "amount": 1, "unit": "适量" }
+    ]
+  },
+  {
+    "id": "scallion-oil-chicken-rice",
+    "name": "葱油鸡饭",
+    "category": "快手",
+    "time": 30,
+    "servings": 2,
+    "tags": ["Easy"],
+    "craving": 2.0,
+    "instruction": "",
+    "ingredients": [
+      { "name": "鸡腿肉", "amount": 1, "unit": "适量" },
+      { "name": "葱", "amount": 1, "unit": "适量" },
+      { "name": "米饭", "amount": 1, "unit": "适量" }
+    ]
+  },
+  {
+    "id": "korean-spicy-ribs",
+    "name": "韩式辣排骨",
+    "category": "快手",
+    "time": 45,
+    "servings": 2,
+    "tags": ["Easy"],
+    "craving": 2.0,
+    "instruction": "将排骨与味淋、生抽、韩国辣酱、辣椒粉拌匀，加入切块的苹果、洋葱和葱，翻炒至香味释放后，加水焖煮至排骨酥烂，收汁即可。",
+    "ingredients": [
+      { "name": "排骨", "amount": 1, "unit": "适量" },
+      { "name": "苹果", "amount": 1, "unit": "适量" },
+      { "name": "洋葱", "amount": 1, "unit": "适量" },
+      { "name": "味淋", "amount": 1, "unit": "适量" },
+      { "name": "生抽", "amount": 1, "unit": "适量" },
+      { "name": "辣椒粉", "amount": 1, "unit": "适量" },
+      { "name": "韩国辣酱", "amount": 1, "unit": "适量" },
+      { "name": "葱", "amount": 1, "unit": "适量" }
+    ]
+  },
+  {
+    "id": "salmon-rice",
+    "name": "三文鱼焖饭",
+    "category": "快手",
+    "time": 30,
+    "servings": 2,
+    "tags": ["Easy"],
+    "craving": 1.0,
+    "instruction": "将三文鱼煎熟，蔬菜切丁，与米饭一起煮熟后拌匀即可。",
+    "ingredients": [
+      { "name": "三文鱼", "amount": 1, "unit": "适量" },
+      { "name": "豌豆", "amount": 1, "unit": "适量" },
+      { "name": "菌菇", "amount": 1, "unit": "适量" },
+      { "name": "洋葱", "amount": 1, "unit": "适量" },
+      { "name": "胡萝卜", "amount": 1, "unit": "适量" },
+      { "name": "米饭", "amount": 1, "unit": "适量" }
+    ]
+  },
+  {
+    "id": "yellow-braised-chicken",
+    "name": "黄焖鸡饭",
+    "category": "快手",
+    "time": 35,
+    "servings": 2,
+    "tags": ["Easy"],
+    "craving": 1.0,
+    "instruction": "将鸡腿肉切块，加入黄豆酱、八角、生抽、老抽拌匀腌制。热锅放油，爆香葱姜蒜，加入鸡肉翻炒至变色。加入土豆块、青椒、香菇继续翻炒。倒入适量水，盖盖小火焖煮至鸡肉和土豆熟软，收汁即可。",
+    "ingredients": [
+      { "name": "鸡腿肉", "amount": 1, "unit": "适量" },
+      { "name": "土豆", "amount": 1, "unit": "适量" },
+      { "name": "香菇", "amount": 1, "unit": "适量" },
+      { "name": "青椒", "amount": 1, "unit": "适量" },
+      { "name": "生抽", "amount": 1, "unit": "适量" },
+      { "name": "老抽", "amount": 1, "unit": "适量" },
+      { "name": "葱姜蒜", "amount": 1, "unit": "适量" },
+      { "name": "八角", "amount": 1, "unit": "适量" },
+      { "name": "黄豆酱", "amount": 1, "unit": "适量" }
+    ]
+  },
+  {
+    "id": "claypot-rice",
+    "name": "煲仔饭",
+    "category": "快手",
+    "time": 30,
+    "servings": 2,
+    "tags": ["Easy"],
+    "craving": 1.0,
+    "instruction": "将米饭放入锅中，加入酱油拌匀，铺上香肠、蔬菜和葱花，打入鸡蛋，盖上锅盖小火焖至米饭熟透、鸡蛋凝固即可。",
+    "ingredients": [
+      { "name": "米饭", "amount": 1, "unit": "适量" },
+      { "name": "香肠", "amount": 1, "unit": "适量" },
+      { "name": "蔬菜", "amount": 1, "unit": "适量" },
+      { "name": "酱油", "amount": 1, "unit": "适量" },
+      { "name": "葱花", "amount": 1, "unit": "适量" },
+      { "name": "鸡蛋", "amount": 1, "unit": "适量" }
+    ]
+  },
+  {
+    "id": "pumpkin-kale-salad",
+    "name": "南瓜甘蓝沙拉",
+    "category": "快手",
+    "time": 25,
+    "servings": 2,
+    "tags": ["Easy"],
+    "craving": 1.0,
+    "instruction": "将南瓜切块，孢子甘蓝洗净切半，胡萝卜切丝，黄瓜切片。将所有蔬菜放入碗中，加入橄榄油、酱油和甜椒粉，拌匀后撒上鹰嘴豆即可。",
+    "ingredients": [
+      { "name": "南瓜", "amount": 1, "unit": "适量" },
+      { "name": "孢子甘蓝", "amount": 1, "unit": "适量" },
+      { "name": "黄瓜", "amount": 1, "unit": "适量" },
+      { "name": "甜椒粉", "amount": 1, "unit": "适量" },
+      { "name": "胡萝卜", "amount": 1, "unit": "适量" },
+      { "name": "鹰嘴豆", "amount": 1, "unit": "适量" },
+      { "name": "酱油", "amount": 1, "unit": "适量" },
+      { "name": "橄榄油", "amount": 1, "unit": "适量" }
+    ]
+  },
+  {
+    "id": "zucchini-tofu-italian",
+    "name": "意式西葫芦豆腐",
+    "category": "快手",
+    "time": 20,
+    "servings": 2,
+    "tags": ["Easy"],
+    "craving": 1.0,
+    "instruction": "将大蒜切末，西葫芦切片，豆腐切块。锅中倒入橄榄油，加入大蒜爆香。放入西葫芦翻炒至稍软，加入豆腐块继续翻炒。加入盐、黑醋调味，挤入柠檬汁，撒上罗勒叶，翻匀出锅。",
+    "ingredients": [
+      { "name": "西葫芦", "amount": 1, "unit": "适量" },
+      { "name": "豆腐", "amount": 1, "unit": "适量" },
+      { "name": "橄榄油", "amount": 1, "unit": "适量" },
+      { "name": "罗勒叶", "amount": 1, "unit": "适量" },
+      { "name": "大蒜", "amount": 1, "unit": "适量" },
+      { "name": "柠檬", "amount": 1, "unit": "适量" },
+      { "name": "黑醋", "amount": 1, "unit": "适量" },
+      { "name": "盐", "amount": 1, "unit": "适量" }
+    ]
+  },
+  {
+    "id": "beef-ribs-soup",
+    "name": "清炖牛肋条",
+    "category": "快手",
+    "time": 60,
+    "servings": 2,
+    "tags": ["Easy"],
+    "craving": 1.0,
+    "instruction": "将牛肋条切块，放入锅中，加足量水和切块的白萝卜，慢火清炖至肉软烂、萝卜入味即可。",
+    "ingredients": [
+      { "name": "牛肋条", "amount": 1, "unit": "适量" },
+      { "name": "白萝卜", "amount": 1, "unit": "适量" }
+    ]
+  },
+  {
+    "id": "brussels-pasta",
+    "name": "孢子甘蓝意面",
+    "category": "快手",
+    "time": 25,
+    "servings": 2,
+    "tags": ["Easy"],
+    "craving": 1.0,
+    "instruction": "将意面煮熟沥干，孢子甘蓝切小块在锅中翻炒至微焦，加入煮好的意面翻拌，撒上帕尔马奶酪即可。",
+    "ingredients": [
+      { "name": "孢子甘蓝", "amount": 1, "unit": "适量" },
+      { "name": "意面", "amount": 1, "unit": "适量" },
+      { "name": "帕尔马奶酪", "amount": 1, "unit": "适量" }
+    ]
+  },
+  {
+    "id": "shrimp-vermicelli-pot",
+    "name": "虾滑粉丝煲",
+    "category": "快手",
+    "time": 30,
+    "servings": 2,
+    "tags": ["Easy"],
+    "craving": 2.0,
+    "instruction": "将大蒜和小米辣切碎，热锅中加入少量油，爆香后加入虾翻炒至变色，加入生抽、白糖、蚝油调味，放入蔬菜略炒。另起锅将粉丝用热水泡软，加入锅中与其他材料一起翻匀，加盖小火焖煮几分钟，撒上小葱即可出锅。",
+    "ingredients": [
+      { "name": "虾", "amount": 1, "unit": "适量" },
+      { "name": "粉丝", "amount": 1, "unit": "适量" },
+      { "name": "大蒜", "amount": 1, "unit": "适量" },
+      { "name": "小米辣", "amount": 1, "unit": "适量" },
+      { "name": "小葱", "amount": 1, "unit": "适量" },
+      { "name": "蚝油", "amount": 1, "unit": "适量" },
+      { "name": "生抽", "amount": 1, "unit": "适量" },
+      { "name": "白糖", "amount": 1, "unit": "适量" },
+      { "name": "蔬菜", "amount": 1, "unit": "适量" }
+    ]
+  },
+  {
+    "id": "pork-cabbage-tofu",
+    "name": "猪肉白菜炖豆腐+粉丝",
+    "category": "快手",
+    "time": 35,
+    "servings": 2,
+    "tags": ["Easy"],
+    "craving": 2.0,
+    "link": "https://www.bilibili.com/video/BV1MAq8BWE3K/",
+    "instruction": "详见 B 站视频",
+    "ingredients": [
+      { "name": "猪肉", "amount": 1, "unit": "适量" },
+      { "name": "白菜", "amount": 1, "unit": "适量" },
+      { "name": "豆腐", "amount": 1, "unit": "适量" },
+      { "name": "粉丝", "amount": 1, "unit": "适量" }
+    ]
+  },
+  {
+    "id": "kimchi-tofu-pot",
+    "name": "韩式豆腐泡菜锅 + 米饭",
+    "category": "快手",
+    "time": 30,
+    "servings": 2,
+    "tags": ["Easy"],
+    "craving": 2.0,
+    "instruction": "将泡菜、豆腐、蔬菜和葱切块，与米饭一起放入锅中，加水煮沸后转小火炖至汤汁浓郁，即可食用。",
+    "ingredients": [
+      { "name": "泡菜", "amount": 1, "unit": "适量" },
+      { "name": "豆腐", "amount": 1, "unit": "适量" },
+      { "name": "蔬菜", "amount": 1, "unit": "适量" },
+      { "name": "米饭", "amount": 1, "unit": "适量" },
+      { "name": "葱", "amount": 1, "unit": "适量" }
+    ]
+  },
+  {
+    "id": "curry-shrimp-egg-rice",
+    "name": "咖喱虾排滑蛋饭",
+    "category": "快手",
+    "time": 30,
+    "servings": 2,
+    "tags": ["Easy"],
+    "craving": 2.0,
+    "instruction": "先将咖喱酱加热，加入切好的蔬菜翻炒至软。放入虾仁继续翻炒至熟，倒入打散的鸡蛋液，快速搅拌至蛋液凝固。最后将炒好的咖喱虾和滑蛋盛在米饭上即可。",
+    "ingredients": [
+      { "name": "咖喱", "amount": 1, "unit": "适量" },
+      { "name": "虾", "amount": 1, "unit": "适量" },
+      { "name": "鸡蛋", "amount": 1, "unit": "适量" },
+      { "name": "蔬菜", "amount": 1, "unit": "适量" },
+      { "name": "米饭", "amount": 1, "unit": "适量" }
+    ]
+  },
+  {
+    "id": "mushroom-pork-rice-cake-soup",
+    "name": "香菇肉丝年糕汤",
+    "category": "快手",
+    "time": 30,
+    "servings": 2,
+    "tags": ["Easy"],
+    "craving": 1.0,
+    "instruction": "将年糕、肉丝、蔬菜和香菇切好，热锅加油炒肉丝至变色，加入香菇和蔬菜翻炒，倒入适量水煮沸，放入年糕煮至软糯，调味后即可出锅。",
+    "ingredients": [
+      { "name": "香菇", "amount": 1, "unit": "适量" },
+      { "name": "肉丝", "amount": 1, "unit": "适量" },
+      { "name": "年糕", "amount": 1, "unit": "适量" },
+      { "name": "蔬菜", "amount": 1, "unit": "适量" }
+    ]
+  },
+  {
+    "id": "mexican-bowl",
+    "name": "墨西哥碗",
+    "category": "快手",
+    "time": 25,
+    "servings": 2,
+    "tags": ["Easy"],
+    "craving": 1.0,
+    "instruction": "将彩椒和牛油果切块，牛肉馅炒熟加入调料，随后将彩椒、牛油果、牛肉馅依次放入碗中，淋上酸奶即可。",
+    "ingredients": [
+      { "name": "牛油果", "amount": 1, "unit": "适量" },
+      { "name": "牛肉馅", "amount": 1, "unit": "适量" },
+      { "name": "彩椒", "amount": 1, "unit": "适量" },
+      { "name": "酸奶", "amount": 1, "unit": "适量" }
+    ]
+  },
+  {
+    "id": "cabbage-egg-shrimp",
+    "name": "包菜水油焖蛋",
+    "category": "快手",
+    "time": 20,
+    "servings": 2,
+    "tags": ["Easy"],
+    "craving": 1.0,
+    "instruction": "将包菜和胡萝卜切丝，虾去壳清洗干净。热锅加油，放入包菜和胡萝卜翻炒。加入虾，炒至变色。打入鸡蛋，搅拌均匀，稍微焖煮至蛋熟。加盐调味，盛出即可。",
+    "ingredients": [
+      { "name": "包菜", "amount": 1, "unit": "适量" },
+      { "name": "胡萝卜", "amount": 1, "unit": "适量" },
+      { "name": "鸡蛋", "amount": 1, "unit": "适量" },
+      { "name": "虾", "amount": 1, "unit": "适量" }
+    ]
+  },
+  {
+    "id": "tomato-potato-beef-rice",
+    "name": "番茄土豆牛肉饭",
+    "category": "快手",
+    "time": 35,
+    "servings": 2,
+    "tags": ["Easy"],
+    "craving": 2.0,
+    "instruction": "先将土豆切块，牛肉切片，番茄切块。锅中加油，先炒牛肉至变色，盛出。再下土豆块翻炒至表面微金黄，加入番茄块继续翻炒。倒入适量水，放入牛肉，加入盐和酱油调味，炖煮至土豆软烂，汤汁浓稠即可。",
+    "ingredients": [
+      { "name": "番茄", "amount": 1, "unit": "适量" },
+      { "name": "土豆", "amount": 1, "unit": "适量" },
+      { "name": "牛肉", "amount": 1, "unit": "适量" },
+      { "name": "米饭", "amount": 1, "unit": "适量" }
+    ]
+  },
+  {
+    "id": "bean-sprout-beef-rice",
+    "name": "豆芽牛肉拌饭",
+    "category": "快手",
+    "time": 25,
+    "servings": 2,
+    "tags": ["Easy"],
+    "craving": 1.0,
+    "instruction": "将牛肉丝用韩式辣酱拌匀翻炒至熟，加入豆芽继续翻炒，最后把炒好的牛肉豆芽铺在饭上，淋上鸡蛋液并稍微加热即可。",
+    "ingredients": [
+      { "name": "韩式辣酱", "amount": 1, "unit": "适量" },
+      { "name": "豆芽", "amount": 1, "unit": "适量" },
+      { "name": "牛肉丝", "amount": 1, "unit": "适量" },
+      { "name": "鸡蛋", "amount": 1, "unit": "适量" },
+      { "name": "米饭", "amount": 1, "unit": "适量" }
+    ]
+  },
+  {
+    "id": "kimchi-dumpling-pot",
+    "name": "泡菜饺子锅",
+    "category": "快手",
+    "time": 30,
+    "servings": 2,
+    "tags": ["Easy"],
+    "craving": 1.0,
+    "instruction": "将所有配料切好，热锅加油炒香洋葱、干辣椒和金针菇，加入泡菜、豆腐和饺子翻炒，倒入生抽、蚝油和韩国辣酱调味，撒上辣椒粉，翻炒均匀即可。",
+    "ingredients": [
+      { "name": "西葫芦", "amount": 1, "unit": "适量" },
+      { "name": "豆腐", "amount": 1, "unit": "适量" },
+      { "name": "金针菇", "amount": 1, "unit": "适量" },
+      { "name": "饺子", "amount": 1, "unit": "适量" },
+      { "name": "洋葱", "amount": 1, "unit": "适量" },
+      { "name": "干辣椒", "amount": 1, "unit": "适量" },
+      { "name": "泡菜", "amount": 1, "unit": "适量" },
+      { "name": "蚝油", "amount": 1, "unit": "适量" },
+      { "name": "韩国辣酱", "amount": 1, "unit": "适量" },
+      { "name": "生抽", "amount": 1, "unit": "适量" },
+      { "name": "辣椒粉", "amount": 1, "unit": "适量" }
+    ]
+  },
+  {
+    "id": "seafood-dressing",
+    "name": "捞汁小海鲜",
+    "category": "快手",
+    "time": 25,
+    "servings": 2,
+    "tags": ["Easy"],
+    "craving": 1.0,
+    "instruction": "用海鲜、冰糖、干辣椒、彩椒、洋葱、蒜末、酱油、蚝油、香油、香醋、青柠檬、白芝麻、葱、黄瓜和水煮蛋炒匀，调味后即可食用。",
+    "ingredients": [
+      { "name": "海鲜拼盘", "amount": 1, "unit": "适量" },
+      { "name": "黄瓜", "amount": 1, "unit": "适量" },
+      { "name": "洋葱", "amount": 1, "unit": "适量" },
+      { "name": "彩椒", "amount": 1, "unit": "适量" },
+      { "name": "青柠檬", "amount": 1, "unit": "适量" },
+      { "name": "蒜末", "amount": 1, "unit": "适量" },
+      { "name": "白芝麻", "amount": 1, "unit": "适量" },
+      { "name": "葱", "amount": 1, "unit": "适量" },
+      { "name": "干辣椒", "amount": 1, "unit": "适量" },
+      { "name": "蚝油", "amount": 1, "unit": "适量" },
+      { "name": "香醋", "amount": 1, "unit": "适量" },
+      { "name": "酱油", "amount": 1, "unit": "适量" },
+      { "name": "冰糖", "amount": 1, "unit": "适量" },
+      { "name": "香油", "amount": 1, "unit": "适量" },
+      { "name": "水煮蛋", "amount": 1, "unit": "适量" }
+    ]
+  },
+  {
+    "id": "lemongrass-chicken-rice",
+    "name": "香茅鸡腿饭",
+    "category": "快手",
+    "time": 35,
+    "servings": 2,
+    "tags": ["Easy"],
+    "craving": 1.0,
+    "instruction": "将鸡腿肉与蒜、冰糖、生抽、鱼露、香茅一起腌制，炒至上色后加入胡萝卜翻炒，最后将米饭和生菜铺底，放上烹好的鸡腿肉即可。",
+    "ingredients": [
+      { "name": "米饭", "amount": 1, "unit": "适量" },
+      { "name": "鸡腿肉", "amount": 1, "unit": "适量" },
+      { "name": "生菜", "amount": 1, "unit": "适量" },
+      { "name": "胡萝卜", "amount": 1, "unit": "适量" },
+      { "name": "香茅", "amount": 1, "unit": "适量" },
+      { "name": "生抽", "amount": 1, "unit": "适量" },
+      { "name": "鱼露", "amount": 1, "unit": "适量" },
+      { "name": "大蒜", "amount": 1, "unit": "适量" },
+      { "name": "冰糖", "amount": 1, "unit": "适量" }
+    ]
+  }
+]
+;

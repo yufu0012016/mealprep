@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>每周食谱 · 速写本</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Patrick+Hand&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <svg class="svg-filters" aria-hidden="true">
+    <filter id="sketch">
+      <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="3" result="noise" />
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.2" xChannelSelector="R" yChannelSelector="G" />
+    </filter>
+  </svg>
+
+  <div class="app">
+    <header class="sketch-header">
+      <div class="doodle-pot">~</div>
+      <h1>每周食谱</h1>
+      <p class="subtitle">速写本 · 每天两顿 · 两人份生鲜清单</p>
+    </header>
+
+    <section class="hero sketch-box">
+      <div class="stats">
+        <div class="stat">
+          <span class="stat-num" id="library-count">—</span>
+          <span class="stat-label">食谱库</span>
+        </div>
+        <div class="stat">
+          <span class="stat-num">14</span>
+          <span class="stat-label">本周餐次</span>
+        </div>
+        <div class="stat">
+          <span class="stat-num">2</span>
+          <span class="stat-label">人份</span>
+        </div>
+      </div>
+      <button id="generate-btn" class="btn-primary sketch-btn">生成本周菜单</button>
+    </section>
+
+    <div id="empty-state" class="empty">
+      <p>点一下，随机抽 14 道菜</p>
+      <p class="empty-note">7 天 × 午饭 + 晚饭</p>
+    </div>
+
+    <div id="results" class="hidden">
+      <section class="panel sketch-box">
+        <div class="panel-header">
+          <h2>本周菜单</h2>
+          <div class="actions">
+            <button id="select-all-btn" class="btn-secondary sketch-btn">全选</button>
+            <button id="select-none-btn" class="btn-secondary sketch-btn">全不选</button>
+            <button id="copy-btn" class="btn-secondary sketch-btn">复制清单</button>
+            <button id="print-btn" class="btn-secondary sketch-btn">打印</button>
+          </div>
+        </div>
+        <p class="hint">勾选要一起备的餐 · 已选 <span id="selected-meal-count">0</span> / 14 餐</p>
+        <div id="meals-list" class="meals-grid"></div>
+      </section>
+
+      <div class="two-col">
+        <section class="panel sketch-box">
+          <h2>一周安排</h2>
+          <div id="week-plan" class="week-plan"></div>
+        </section>
+
+        <section class="panel sketch-box">
+          <h2>生鲜清单 <span class="badge" id="shop-count">0</span></h2>
+          <p class="hint">根据上方勾选的餐次生成 · 仅含生鲜</p>
+          <div id="shopping-list" class="shopping-list"></div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <script src="recipes.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
