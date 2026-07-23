@@ -578,56 +578,6 @@ body.modal-open {
   white-space: nowrap;
 }
 
-.two-col {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1.25rem;
-}
-
-.week-plan {
-  display: flex;
-  flex-direction: column;
-  gap: 0.85rem;
-}
-
-.plan-day-group {
-  border-bottom: 1px dashed var(--pencil-faint);
-  padding-bottom: 0.6rem;
-}
-
-.plan-day-group:last-child {
-  border-bottom: none;
-}
-
-.plan-day-header {
-  font-family: "Caveat", cursive;
-  font-size: 1.25rem;
-  font-weight: 700;
-  margin-bottom: 0.35rem;
-  color: var(--sketch-red);
-}
-
-.plan-row {
-  display: grid;
-  grid-template-columns: 1.1rem 2.5rem 1fr;
-  gap: 0.45rem;
-  padding: 0.2rem 0;
-  font-size: 0.98rem;
-}
-
-.plan-day-group .meal-pick-row {
-  margin-bottom: 0.15rem;
-}
-
-.plan-slot {
-  color: var(--sketch-blue);
-  font-size: 0.9rem;
-}
-
-.plan-meal {
-  font-weight: 400;
-}
-
 .shopping-list {
   display: flex;
   flex-direction: column;
@@ -785,10 +735,6 @@ body.modal-open {
 }
 
 @media (max-width: 640px) {
-  .two-col {
-    grid-template-columns: 1fr;
-  }
-
   .stats {
     gap: 1.5rem;
   }

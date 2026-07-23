@@ -418,24 +418,6 @@ function renderMeals() {
     .join('');
 }
 
-function renderWeekPlan() {
-  const days = dayLabels();
-  const container = document.getElementById('week-plan');
-
-  container.innerHTML = days
-    .map((day, dayIndex) => {
-      const lunchIdx = dayIndex * 2;
-      const dinnerIdx = dayIndex * 2 + 1;
-      return `
-    <div class="plan-day-group">
-      <div class="plan-day-header">${day}</div>
-      ${mealRowHtml(lunchIdx, MEAL_SLOTS[0], weekRecipes[lunchIdx])}
-      ${mealRowHtml(dinnerIdx, MEAL_SLOTS[1], weekRecipes[dinnerIdx])}
-    </div>`;
-    })
-    .join('');
-}
-
 function shopItemHtml(item, purchased) {
   const imperialHtml = item.displayImperial
     ? `<span class="shop-imperial">${item.displayImperial}</span>`
@@ -508,7 +490,6 @@ function renderShoppingList(items) {
 
 function updateView() {
   renderMeals();
-  renderWeekPlan();
   renderShoppingList(buildShoppingList(getActiveRecipes()));
   saveLastMenu();
   syncIncludeSundayFromMenu();
