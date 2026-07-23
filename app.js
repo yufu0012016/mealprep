@@ -3,30 +3,41 @@ const DAYS = 7;
 const MEAL_COUNT = MEALS_PER_DAY * DAYS;
 const TARGET_SERVINGS = 2;
 const MEAL_SLOTS = ['午饭', '晚饭'];
-
-const PANTRY = new Set([
-  '盐', '糖', '生抽', '老抽', '蚝油', '味增', '酱油', '醋', '香醋', '巴萨米克醋', '果醋', '黑醋',
-  '料酒', '味淋', '香油', '食用油', '橄榄油', '黄油', '奶油', '淡奶油',
-  '花生酱', '麻酱', '豆瓣酱', '韩国辣酱', '辣酱', '番茄酱', '番茄膏',
-  '咖喱', '咖喱粉', '孜然粉', '辣椒粉', '胡椒粉', '黑胡椒', '白胡椒粉',
-  '大蒜粉', '洋葱粉', '甜椒粉', '姜黄', '花椒粉', '五香粉',
-  '淀粉', '玉米淀粉', '白芝麻', '蜂蜜', '辣蜂蜜', '冰糖', '白糖',
-  '米酒', '白葡萄酒', '鱼露', '美乃滋', '青酱', '关东煮酱汁', '木鱼花',
-  '高汤', 'dashi', '丁香', '八角', '香叶', '干辣椒', '小米辣', '泡椒',
-  '米饭', '隔夜米饭', '面条', '粉丝', '意面', 'rigatoni', '面粉', '酵母',
-  '干菌', '海苔', '白豆', '果酱',
-]);
-
-const FRESH_PATTERN =
-  /肉|鸡|鸭|猪|牛|羊|排骨|虾|蟹|鱼|贝|章|蛤|蚝|翅|腿|腩|丝|馅|肠|培根|海鲜|蛋|豆腐|豆乳|豆浆|菜|瓜|茄|椒|葱|蒜|姜|菇|菌|萝卜|土豆|番茄|西兰|包菜|甘蓝|羽衣|生菜|沙拉|菠菜|黄瓜|胡萝卜|洋葱|苹果|柠檬|百香果|薄荷|香菜|罗勒|basil|牛油果|南瓜|红薯|玉米|豌豆|青豆|豆芽|白菜|西葫芦|杏鲍菇|口蘑|蘑菇|香菇|奶酪|马苏里|cottage|欧芹|枸杞|红枣|椰子|饺子|香肠|火腿|裙带|海带|章鱼|扇贝|虾仁|三文鱼|巴沙/i;
+const STORAGE_KEY_LAST_GENERATED = 'mealprep_last_generated_at';
+const STORAGE_KEY_LAST_MENU = 'mealprep_last_menu';
+const GENERATION_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 
 let allRecipes = [];
 let weekRecipes = [];
 let checkedMeals = [];
+let purchasedItems = new Set();
 
-async function loadRecipes() {
-  allRecipes = typeof RECIPES !== 'undefined' ? RECIPES : [];
+function loadRecipeLibrary() {
+  const base = typeof RECIPES !== 'undefined' ? RECIPES : [];
+  const cached = loadEnrichedRecipes();
+  if (cached && cached.length === base.length) {
+    allRecipes = cached;
+    document.getElementById('enrich-status').textContent = '已加载完善版食谱';
+    return;
+  }
+  allRecipes = heuristicEnrichAll(base);
+  saveEnrichedRecipes(allRecipes);
+  document.getElementById('enrich-status').textContent = '已用营养模型估算份量（可在设置中用 AI 精修）';
+}
+
+async function initApp() {
+  loadRecipeLibrary();
   document.getElementById('library-count').textContent = allRecipes.length;
+  document.getElementById('profile-desc').textContent = NUTRITION_PROFILE.description;
+
+  const savedKey = getApiKey();
+  if (savedKey) {
+    document.getElementById('api-key').value = savedKey;
+  }
+  document.getElementById('api-base').value = getApiBase();
+
+  loadSharedMenuFromUrl();
+  updateRecentMenuOption();
 }
 
 function shuffle(arr) {
@@ -42,21 +53,10 @@ function pickRecipes() {
   const quickMeals = allRecipes.filter((r) => r.category === '快手');
   const pool = quickMeals.length >= MEAL_COUNT ? quickMeals : allRecipes;
   if (pool.length < MEAL_COUNT) {
-    alert(`食谱库只有 ${pool.length} 道菜，无法生成 ${MEAL_COUNT} 道（需要 ${MEAL_COUNT} 道）`);
+    alert(`食谱库只有 ${pool.length} 道菜，无法生成 ${MEAL_COUNT} 道`);
     return [];
   }
   return shuffle(pool).slice(0, MEAL_COUNT);
-}
-
-function isPantryItem(name) {
-  const trimmed = name.trim();
-  return PANTRY.has(trimmed) || PANTRY.has(trimmed.toLowerCase());
-}
-
-function isFreshIngredient(name) {
-  const trimmed = name.trim();
-  if (FRESH_PATTERN.test(trimmed)) return true;
-  return !isPantryItem(trimmed);
 }
 
 function scaleAmount(amount, recipeServings) {
@@ -75,12 +75,16 @@ function getActiveRecipes() {
   return weekRecipes.filter((_, i) => checkedMeals[i]);
 }
 
+function getShopItemKey(item) {
+  return item.unit === '适量' ? item.name : `${item.name}__${item.unit}`;
+}
+
 function buildShoppingList(recipes) {
   const map = new Map();
 
   for (const recipe of recipes) {
     for (const ing of recipe.ingredients) {
-      if (!isFreshIngredient(ing.name)) continue;
+      if (ing.pantry || !isFreshIngredient(ing.name)) continue;
 
       const isFlexible = ing.unit === '适量';
       const key = isFlexible ? ing.name : `${ing.name}__${ing.unit}`;
@@ -101,16 +105,27 @@ function buildShoppingList(recipes) {
   }
 
   return [...map.values()]
-    .map((item) => ({
-      ...item,
-      recipes: [...item.recipes],
-      display: item.unit === '适量' ? '适量' : `${formatAmount(item.amount)} ${item.unit}`,
-    }))
+    .map((item) => {
+      const amounts = formatShoppingAmount(item);
+      return {
+        ...item,
+        key: getShopItemKey(item),
+        recipes: [...item.recipes],
+        display: amounts.metric,
+        displayImperial: amounts.imperial,
+      };
+    })
     .sort((a, b) => a.name.localeCompare(b.name, 'zh-CN'));
 }
 
 function dayLabels() {
   return ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+}
+
+function nutritionBadge(recipe) {
+  if (!recipe.nutrition) return '';
+  const n = recipe.nutrition;
+  return `<span class="nutrition-badge">≈${n.caloriesPerPerson}kcal/人 · ${n.proteinGPerPerson}g蛋白</span>`;
 }
 
 function mealRowHtml(index, slot, recipe) {
@@ -119,7 +134,7 @@ function mealRowHtml(index, slot, recipe) {
     <label class="meal-pick-row ${checked ? 'is-selected' : 'is-unselected'}" data-meal-index="${index}">
       <input type="checkbox" class="meal-checkbox" ${checked ? 'checked' : ''} />
       <span class="meal-slot">${slot}</span>
-      <span class="meal-name">${recipe.name}</span>
+      <span class="meal-name">${recipe.name}${nutritionBadge(recipe)}</span>
       <span class="meal-meta">${recipe.time} 分钟</span>
     </label>`;
 }
@@ -165,28 +180,64 @@ function renderWeekPlan() {
     .join('');
 }
 
+function shopItemHtml(item, purchased) {
+  const imperialHtml = item.displayImperial
+    ? `<span class="shop-imperial">${item.displayImperial}</span>`
+    : '';
+  return `
+    <label class="shop-item ${purchased ? 'shop-item-purchased' : ''}" data-shop-key="${item.key}">
+      <input type="checkbox" class="shop-checkbox" ${purchased ? 'checked' : ''} />
+      <span class="shop-name">${item.name}</span>
+      <span class="shop-amount">
+        <span class="shop-metric">${item.display}</span>
+        ${imperialHtml}
+      </span>
+    </label>`;
+}
+
 function renderShoppingList(items) {
   const container = document.getElementById('shopping-list');
   const active = getActiveRecipes();
 
   if (active.length === 0) {
     container.innerHTML = '<p class="empty-list">请先勾选要备的餐</p>';
-  } else if (items.length === 0) {
-    container.innerHTML = '<p class="empty-list">所选餐次无需额外采购生鲜</p>';
-  } else {
-    container.innerHTML = items
-      .map(
-        (item) => `
-    <label class="shop-item">
-      <input type="checkbox" class="shop-checkbox" />
-      <span class="shop-name">${item.name}</span>
-      <span class="shop-amount">${item.display}</span>
-    </label>`
-      )
-      .join('');
+    document.getElementById('shop-count').textContent = '0';
+    document.getElementById('selected-meal-count').textContent = active.length;
+    return;
   }
 
-  document.getElementById('shop-count').textContent = items.length;
+  if (items.length === 0) {
+    container.innerHTML = '<p class="empty-list">所选餐次无需额外采购生鲜</p>';
+    document.getElementById('shop-count').textContent = '0';
+    document.getElementById('selected-meal-count').textContent = active.length;
+    return;
+  }
+
+  const currentKeys = new Set(items.map((i) => i.key));
+  for (const key of purchasedItems) {
+    if (!currentKeys.has(key)) purchasedItems.delete(key);
+  }
+
+  const pending = items.filter((i) => !purchasedItems.has(i.key));
+  const purchased = items.filter((i) => purchasedItems.has(i.key));
+
+  let html = '';
+  if (pending.length > 0) {
+    html += `<div class="shop-pending">${pending.map((i) => shopItemHtml(i, false)).join('')}</div>`;
+  } else {
+    html += '<p class="empty-list shop-all-done">全部买齐了 ✓</p>';
+  }
+
+  if (purchased.length > 0) {
+    html += `
+      <details class="shop-purchased-wrap">
+        <summary class="shop-purchased-summary">已购买 (${purchased.length})</summary>
+        <div class="shop-purchased">${purchased.map((i) => shopItemHtml(i, true)).join('')}</div>
+      </details>`;
+  }
+
+  container.innerHTML = html;
+  document.getElementById('shop-count').textContent = pending.length;
   document.getElementById('selected-meal-count').textContent = active.length;
 }
 
@@ -194,6 +245,80 @@ function updateView() {
   renderMeals();
   renderWeekPlan();
   renderShoppingList(buildShoppingList(getActiveRecipes()));
+  saveLastMenu();
+}
+
+function showResultsView() {
+  document.getElementById('results').classList.remove('hidden');
+  document.getElementById('empty-state').classList.add('hidden');
+}
+
+function formatGeneratedTime(timestamp) {
+  const date = new Date(timestamp);
+  const now = new Date();
+  const isToday = date.toDateString() === now.toDateString();
+  const time = date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+  if (isToday) return `今天 ${time}`;
+  return `${date.getMonth() + 1}月${date.getDate()}日 ${time}`;
+}
+
+function loadLastMenuSnapshot() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_LAST_MENU);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveLastMenu() {
+  if (weekRecipes.length !== MEAL_COUNT) return;
+
+  localStorage.setItem(
+    STORAGE_KEY_LAST_MENU,
+    JSON.stringify({
+      generatedAt: getLastGeneratedAt() || Date.now(),
+      recipeIds: weekRecipes.map((r) => r.id),
+      checkedMeals: [...checkedMeals],
+      purchasedItems: [...purchasedItems],
+    })
+  );
+  updateRecentMenuOption();
+}
+
+function hasRecentMenu() {
+  const snap = loadLastMenuSnapshot();
+  return Boolean(snap && isWithinWeek(snap.generatedAt) && snap.recipeIds?.length === MEAL_COUNT);
+}
+
+function updateRecentMenuOption() {
+  const btn = document.getElementById('restore-menu-btn');
+  const hint = document.getElementById('restore-menu-hint');
+  const snap = loadLastMenuSnapshot();
+
+  if (hasRecentMenu()) {
+    btn.classList.remove('hidden');
+    hint.textContent = `上次生成：${formatGeneratedTime(snap.generatedAt)}`;
+    hint.classList.remove('hidden');
+  } else {
+    btn.classList.add('hidden');
+    hint.classList.add('hidden');
+  }
+}
+
+function restoreLastMenu() {
+  const snap = loadLastMenuSnapshot();
+  if (!hasRecentMenu()) {
+    alert('一周内没有可恢复的菜单');
+    updateRecentMenuOption();
+    return;
+  }
+
+  try {
+    applyMenuSnapshot(snap);
+  } catch (e) {
+    alert(e.message);
+  }
 }
 
 function setAllMeals(checked) {
@@ -206,23 +331,142 @@ function onMealCheckboxChange(index, checked) {
   updateView();
 }
 
-function generate() {
+function getLastGeneratedAt() {
+  const raw = localStorage.getItem(STORAGE_KEY_LAST_GENERATED);
+  return raw ? Number(raw) : null;
+}
+
+function saveLastGeneratedAt(timestamp = Date.now()) {
+  localStorage.setItem(STORAGE_KEY_LAST_GENERATED, String(timestamp));
+}
+
+function getMenuSnapshot() {
+  return {
+    generatedAt: getLastGeneratedAt() || Date.now(),
+    recipeIds: weekRecipes.map((r) => r.id),
+    checkedMeals: [...checkedMeals],
+    purchasedItems: [...purchasedItems],
+  };
+}
+
+function encodeSharePayload(snapshot) {
+  const json = JSON.stringify(snapshot);
+  return btoa(unescape(encodeURIComponent(json)))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+}
+
+function decodeSharePayload(encoded) {
+  let b64 = encoded.replace(/-/g, '+').replace(/_/g, '/');
+  while (b64.length % 4) b64 += '=';
+  return JSON.parse(decodeURIComponent(escape(atob(b64))));
+}
+
+function buildShareUrl(snapshot) {
+  const url = new URL(window.location.href);
+  url.search = '';
+  url.hash = '';
+  url.searchParams.set('menu', encodeSharePayload(snapshot));
+  return url.toString();
+}
+
+function applyMenuSnapshot(snap) {
+  const recipeMap = new Map(allRecipes.map((r) => [r.id, r]));
+  const restored = snap.recipeIds.map((id) => recipeMap.get(id));
+
+  if (restored.length !== MEAL_COUNT || restored.some((r) => !r)) {
+    throw new Error('食谱库版本不一致，无法加载该菜单');
+  }
+
+  weekRecipes = restored;
+  checkedMeals =
+    snap.checkedMeals?.length === MEAL_COUNT ? [...snap.checkedMeals] : weekRecipes.map(() => true);
+  purchasedItems = new Set(snap.purchasedItems || []);
+  saveLastGeneratedAt(snap.generatedAt || Date.now());
+  updateView();
+  showResultsView();
+}
+
+function loadSharedMenuFromUrl() {
+  const encoded = new URLSearchParams(window.location.search).get('menu');
+  if (!encoded) return false;
+
+  try {
+    applyMenuSnapshot(decodeSharePayload(encoded));
+    history.replaceState({}, '', window.location.pathname);
+    setEnrichStatus('已打开分享的菜单');
+    return true;
+  } catch (e) {
+    alert(`无法加载分享菜单：${e.message}`);
+    history.replaceState({}, '', window.location.pathname);
+    return false;
+  }
+}
+
+function shareMenu() {
+  if (weekRecipes.length !== MEAL_COUNT) {
+    alert('请先生成菜单');
+    return;
+  }
+
+  const url = buildShareUrl(getMenuSnapshot());
+  const days = dayLabels();
+  const lines = days.flatMap((day, i) => {
+    const lunch = weekRecipes[i * 2];
+    const dinner = weekRecipes[i * 2 + 1];
+    return [`${day} ${MEAL_SLOTS[0]}：${lunch.name}`, `${day} ${MEAL_SLOTS[1]}：${dinner.name}`];
+  });
+
+  navigator.clipboard.writeText(`本周菜单\n\n${lines.join('\n')}\n\n打开链接查看完整清单：\n${url}`);
+
+  const btn = document.getElementById('share-btn');
+  btn.textContent = '链接已复制 ✓';
+  setTimeout(() => (btn.textContent = '分享菜单'), 2000);
+}
+
+function setEnrichStatus(text) {
+  const el = document.getElementById('enrich-status');
+  if (el) el.textContent = text;
+}
+
+function isWithinWeek(timestamp) {
+  return timestamp && Date.now() - timestamp < GENERATION_WINDOW_MS;
+}
+
+function shouldProceedWithGeneration() {
+  const last = getLastGeneratedAt();
+  if (!isWithinWeek(last)) return true;
+  return confirm('一周内已有菜单生成，你是否还希望继续？');
+}
+
+function doGenerate() {
   weekRecipes = pickRecipes();
   if (weekRecipes.length === 0) return;
 
   checkedMeals = weekRecipes.map(() => true);
+  purchasedItems.clear();
+  saveLastGeneratedAt();
   updateView();
+  showResultsView();
+}
 
-  document.getElementById('results').classList.remove('hidden');
-  document.getElementById('empty-state').classList.add('hidden');
+function generate() {
+  if (!shouldProceedWithGeneration()) return;
+  doGenerate();
 }
 
 function copyShoppingList() {
   const active = getActiveRecipes();
-  const items = buildShoppingList(active);
+  const items = buildShoppingList(active).filter((i) => !purchasedItems.has(i.key));
   const mealNames = active.map((r) => r.name).join('、');
   const text = items.length
-    ? items.map((i) => `☐ ${i.name}  ${i.display}`).join('\n')
+    ? items
+        .map((i) => {
+          const us = i.displayImperial ? ` (${i.displayImperial})` : '';
+          return `☐ ${i.name}  ${i.display}${us}`;
+        })
+        .join('\n')
     : '（无生鲜采购）';
   navigator.clipboard.writeText(
     `备餐生鲜清单（${TARGET_SERVINGS} 人份 · 调料自备）\n` +
@@ -237,17 +481,92 @@ function printPage() {
   window.print();
 }
 
+function toggleSettings(show) {
+  document.getElementById('settings-panel').classList.toggle('hidden', !show);
+}
+
+async function runEnrichment(useAi) {
+  const btn = document.getElementById('enrich-btn');
+  const progress = document.getElementById('enrich-progress');
+  const apiKey = document.getElementById('api-key').value.trim();
+  const apiBase = document.getElementById('api-base').value.trim() || 'https://api.openai.com/v1';
+
+  if (useAi && !apiKey) {
+    alert('请先在设置中填入 OpenAI API Key');
+    toggleSettings(true);
+    return;
+  }
+
+  saveApiSettings(apiKey, apiBase);
+  btn.disabled = true;
+  progress.classList.remove('hidden');
+
+  const base = typeof RECIPES !== 'undefined' ? RECIPES : allRecipes;
+
+  try {
+    allRecipes = await enrichAllRecipes(base, {
+      apiKey,
+      apiBase,
+      useAi,
+      onProgress: ({ current, total, name }) => {
+        progress.textContent = `完善中 ${current}/${total}：${name}`;
+      },
+    });
+    saveEnrichedRecipes(allRecipes);
+    document.getElementById('library-count').textContent = allRecipes.length;
+    document.getElementById('enrich-status').textContent = useAi
+      ? 'AI 已完善全部食谱份量'
+      : '已重新估算全部食谱份量';
+    if (weekRecipes.length) updateView();
+  } catch (e) {
+    alert(`完善失败：${e.message}`);
+  } finally {
+    btn.disabled = false;
+    progress.classList.add('hidden');
+  }
+}
+
 document.getElementById('generate-btn').addEventListener('click', generate);
+document.getElementById('restore-menu-btn').addEventListener('click', restoreLastMenu);
+document.getElementById('share-btn').addEventListener('click', shareMenu);
 document.getElementById('copy-btn').addEventListener('click', copyShoppingList);
 document.getElementById('print-btn').addEventListener('click', printPage);
 document.getElementById('select-all-btn').addEventListener('click', () => setAllMeals(true));
 document.getElementById('select-none-btn').addEventListener('click', () => setAllMeals(false));
+document.getElementById('settings-btn').addEventListener('click', () => toggleSettings(true));
+document.getElementById('settings-close').addEventListener('click', () => toggleSettings(false));
+document.getElementById('save-settings-btn').addEventListener('click', () => {
+  saveApiSettings(
+    document.getElementById('api-key').value.trim(),
+    document.getElementById('api-base').value.trim()
+  );
+  toggleSettings(false);
+});
+document.getElementById('enrich-btn').addEventListener('click', () => runEnrichment(true));
+document.getElementById('enrich-heuristic-btn').addEventListener('click', () => runEnrichment(false));
+document.getElementById('export-recipes-btn').addEventListener('click', () => downloadRecipesJson(allRecipes));
+document.getElementById('reset-recipes-btn').addEventListener('click', () => {
+  if (confirm('恢复原始食谱（清除 AI 完善结果）？')) {
+    clearEnrichedRecipes();
+    loadRecipeLibrary();
+    document.getElementById('library-count').textContent = allRecipes.length;
+  }
+});
 
 document.getElementById('results').addEventListener('change', (e) => {
   const row = e.target.closest('[data-meal-index]');
-  if (!row || !e.target.classList.contains('meal-checkbox')) return;
-  const index = Number(row.dataset.mealIndex);
-  onMealCheckboxChange(index, e.target.checked);
+  if (row && e.target.classList.contains('meal-checkbox')) {
+    onMealCheckboxChange(Number(row.dataset.mealIndex), e.target.checked);
+    return;
+  }
+
+  const shopRow = e.target.closest('[data-shop-key]');
+  if (shopRow && e.target.classList.contains('shop-checkbox')) {
+    const key = shopRow.dataset.shopKey;
+    if (e.target.checked) purchasedItems.add(key);
+    else purchasedItems.delete(key);
+    renderShoppingList(buildShoppingList(getActiveRecipes()));
+  }
 });
 
-loadRecipes();
+initApp();

@@ -91,6 +91,64 @@ header h1 {
   padding: 1.75rem;
 }
 
+.settings-toggle {
+  margin-top: 0.75rem;
+  display: inline-block;
+}
+
+.enrich-status,
+.profile-desc {
+  font-size: 0.9rem;
+  color: var(--pencil-light);
+  margin-top: 0.6rem;
+}
+
+.settings-panel {
+  margin-top: -0.5rem;
+}
+
+.settings-grid {
+  display: grid;
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+
+.settings-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.95rem;
+}
+
+.settings-grid input {
+  font-family: inherit;
+  font-size: 1rem;
+  padding: 0.45rem 0.6rem;
+  border: 2px solid var(--pencil);
+  border-radius: 6px 10px 7px 9px / 9px 6px 10px 7px;
+  background: #fff;
+}
+
+.settings-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.enrich-progress {
+  margin-top: 0.75rem;
+  font-size: 0.95rem;
+  color: var(--sketch-red);
+}
+
+.nutrition-badge {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--sketch-blue);
+  margin-top: 0.1rem;
+}
+
 .stats {
   display: flex;
   justify-content: center;
@@ -164,6 +222,10 @@ header h1 {
   font-size: 0.95rem;
   color: var(--pencil-faint);
   margin-top: 0.35rem;
+}
+
+.restore-menu-btn {
+  margin-top: 1rem;
 }
 
 .empty-list {
@@ -318,6 +380,7 @@ header h1 {
 
 .meal-name {
   font-weight: 400;
+  line-height: 1.3;
 }
 
 .meal-meta {
@@ -427,6 +490,62 @@ header h1 {
 }
 
 .shop-item input:checked ~ .shop-name {
+  color: var(--pencil-light);
+}
+
+.shop-pending {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.shop-all-done {
+  color: var(--sketch-red);
+  font-style: normal;
+  padding: 0.5rem 0;
+}
+
+.shop-purchased-wrap {
+  margin-top: 0.75rem;
+  border-top: 1.5px dashed var(--pencil-faint);
+  padding-top: 0.5rem;
+}
+
+.shop-purchased-summary {
+  font-family: "Caveat", cursive;
+  font-size: 1.15rem;
+  color: var(--pencil-light);
+  cursor: pointer;
+  padding: 0.35rem 0.2rem;
+  list-style: none;
+}
+
+.shop-purchased-summary::-webkit-details-marker {
+  display: none;
+}
+
+.shop-purchased-summary::before {
+  content: "▸ ";
+  display: inline-block;
+  transition: transform 0.15s;
+}
+
+.shop-purchased-wrap[open] .shop-purchased-summary::before {
+  transform: rotate(90deg);
+}
+
+.shop-purchased {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.35rem 0 0 0.5rem;
+}
+
+.shop-item-purchased {
+  opacity: 0.75;
+}
+
+.shop-item-purchased .shop-name {
   text-decoration: line-through;
   color: var(--pencil-faint);
 }
@@ -436,9 +555,22 @@ header h1 {
 }
 
 .shop-amount {
-  font-size: 0.9rem;
-  color: var(--sketch-blue);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.1rem;
   white-space: nowrap;
+  font-size: 0.9rem;
+}
+
+.shop-metric {
+  color: var(--sketch-blue);
+  font-weight: 600;
+}
+
+.shop-imperial {
+  color: var(--pencil-light);
+  font-size: 0.82rem;
 }
 
 @media (max-width: 640px) {

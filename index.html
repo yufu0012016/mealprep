@@ -40,11 +40,42 @@
         </div>
       </div>
       <button id="generate-btn" class="btn-primary sketch-btn">生成本周菜单</button>
+      <button id="settings-btn" class="btn-secondary sketch-btn settings-toggle">⚙ 营养 & AI</button>
+      <p class="enrich-status" id="enrich-status"></p>
+    </section>
+
+    <section id="settings-panel" class="panel sketch-box hidden settings-panel">
+      <div class="panel-header">
+        <h2>营养设定 & AI 完善</h2>
+        <button id="settings-close" class="btn-secondary sketch-btn">关闭</button>
+      </div>
+      <p class="profile-desc" id="profile-desc"></p>
+      <div class="settings-grid">
+        <label>
+          OpenAI API Key
+          <input type="password" id="api-key" placeholder="sk-..." autocomplete="off" />
+        </label>
+        <label>
+          API 地址（可选）
+          <input type="text" id="api-base" placeholder="https://api.openai.com/v1" />
+        </label>
+      </div>
+      <p class="hint">Key 仅保存在本机浏览器，不会上传。兼容 OpenAI 格式的 API。</p>
+      <div class="settings-actions">
+        <button id="save-settings-btn" class="btn-secondary sketch-btn">保存设置</button>
+        <button id="enrich-btn" class="btn-primary sketch-btn">AI 完善全部食谱</button>
+        <button id="enrich-heuristic-btn" class="btn-secondary sketch-btn">离线重新估算</button>
+        <button id="export-recipes-btn" class="btn-secondary sketch-btn">导出 recipes.json</button>
+        <button id="reset-recipes-btn" class="btn-secondary sketch-btn">恢复原始</button>
+      </div>
+      <p id="enrich-progress" class="enrich-progress hidden"></p>
     </section>
 
     <div id="empty-state" class="empty">
       <p>点一下，随机抽 14 道菜</p>
       <p class="empty-note">7 天 × 午饭 + 晚饭</p>
+      <button id="restore-menu-btn" class="btn-secondary sketch-btn restore-menu-btn hidden">回到最近生成的菜单</button>
+      <p id="restore-menu-hint" class="empty-note hidden"></p>
     </div>
 
     <div id="results" class="hidden">
@@ -54,6 +85,7 @@
           <div class="actions">
             <button id="select-all-btn" class="btn-secondary sketch-btn">全选</button>
             <button id="select-none-btn" class="btn-secondary sketch-btn">全不选</button>
+            <button id="share-btn" class="btn-secondary sketch-btn">分享菜单</button>
             <button id="copy-btn" class="btn-secondary sketch-btn">复制清单</button>
             <button id="print-btn" class="btn-secondary sketch-btn">打印</button>
           </div>
@@ -70,7 +102,7 @@
 
         <section class="panel sketch-box">
           <h2>生鲜清单 <span class="badge" id="shop-count">0</span></h2>
-          <p class="hint">根据上方勾选的餐次生成 · 仅含生鲜</p>
+          <p class="hint">根据上方勾选的餐次生成 · 公制 + 美国常用单位</p>
           <div id="shopping-list" class="shopping-list"></div>
         </section>
       </div>
@@ -78,6 +110,9 @@
   </div>
 
   <script src="recipes.js"></script>
+  <script src="nutrition.js"></script>
+  <script src="units.js"></script>
+  <script src="ai-enrich.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
