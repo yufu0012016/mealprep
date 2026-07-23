@@ -85,6 +85,7 @@
             <button id="select-all-btn" class="btn-secondary sketch-btn">全选</button>
             <button id="select-none-btn" class="btn-secondary sketch-btn">全不选</button>
             <button id="share-btn" class="btn-secondary sketch-btn">分享菜单</button>
+            <button id="menu-image-btn" class="btn-secondary sketch-btn">菜单图片</button>
             <button id="copy-btn" class="btn-secondary sketch-btn">复制清单</button>
             <button id="print-btn" class="btn-secondary sketch-btn">打印</button>
           </div>
@@ -119,6 +120,22 @@
     </div>
   </div>
 
+  <div id="menu-image-modal" class="recipe-modal hidden" role="dialog" aria-modal="true" aria-labelledby="menu-image-modal-title">
+    <div class="recipe-modal-backdrop" id="menu-image-modal-backdrop"></div>
+    <div class="recipe-modal-box sketch-box menu-image-modal-box">
+      <button type="button" id="menu-image-modal-close" class="recipe-modal-close" aria-label="关闭">×</button>
+      <h3 id="menu-image-modal-title" class="recipe-modal-title">本周菜单图片</h3>
+      <p id="menu-image-status" class="menu-image-status">正在生成图片…</p>
+      <div class="menu-image-preview-wrap">
+        <img id="menu-image-preview" class="menu-image-preview hidden" alt="本周菜单预览" />
+      </div>
+      <div class="generate-modal-actions menu-image-actions">
+        <button type="button" id="menu-image-copy-btn" class="btn-secondary sketch-btn" disabled>复制图片</button>
+        <button type="button" id="menu-image-save-btn" class="btn-primary sketch-btn" disabled>保存到相册</button>
+      </div>
+    </div>
+  </div>
+
   <div id="recipe-modal" class="recipe-modal hidden" role="dialog" aria-modal="true">
     <div class="recipe-modal-backdrop" id="recipe-modal-backdrop"></div>
     <div class="recipe-modal-box sketch-box">
@@ -136,6 +153,7 @@
   <script src="nutrition.js"></script>
   <script src="units.js"></script>
   <script src="ai-enrich.js"></script>
+  <script src="menu-image.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

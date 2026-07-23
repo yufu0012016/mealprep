@@ -17,6 +17,8 @@ let weekRecipes = [];
 let mealClaims = [];
 let purchasedItems = new Set();
 let includeSunday = false;
+let menuImageBlob = null;
+let menuImageFilename = 'weekly-menu.png';
 
 function getMealCount(includeSun = includeSunday) {
   return MEALS_PER_DAY * (includeSun ? FULL_WEEK_DAYS : DEFAULT_DAYS);
@@ -393,6 +395,85 @@ function showRecipeModal(recipe) {
 function closeRecipeModal() {
   document.getElementById('recipe-modal').classList.add('hidden');
   document.body.classList.remove('modal-open');
+}
+
+function closeMenuImageModal() {
+  document.getElementById('menu-image-modal').classList.add('hidden');
+  document.body.classList.remove('modal-open');
+}
+
+function setMenuImageActionState(enabled) {
+  document.getElementById('menu-image-copy-btn').disabled = !enabled;
+  document.getElementById('menu-image-save-btn').disabled = !enabled;
+}
+
+async function openMenuImageModal() {
+  if (!isValidMealCount(weekRecipes.length)) {
+    alert('请先生成菜单');
+    return;
+  }
+
+  const modal = document.getElementById('menu-image-modal');
+  const preview = document.getElementById('menu-image-preview');
+  const status = document.getElementById('menu-image-status');
+
+  menuImageBlob = null;
+  menuImageFilename = buildMenuImageFilename(getLastGeneratedAt() || Date.now());
+  preview.classList.add('hidden');
+  preview.removeAttribute('src');
+  setMenuImageActionState(false);
+  status.textContent = '正在生成图片…';
+  modal.classList.remove('hidden');
+  document.body.classList.add('modal-open');
+
+  try {
+    const canvas = await buildMenuImageCanvas({
+      days: dayLabels(),
+      weekRecipes,
+      mealClaims,
+      mealSlots: MEAL_SLOTS,
+      generatedAt: getLastGeneratedAt() || Date.now(),
+    });
+    menuImageBlob = await canvasToBlob(canvas);
+    preview.src = canvas.toDataURL('image/png');
+    preview.classList.remove('hidden');
+    status.textContent = '可复制或保存到相册';
+    setMenuImageActionState(true);
+  } catch (error) {
+    console.error(error);
+    status.textContent = error.message || '生成失败，请重试';
+  }
+}
+
+async function copyMenuImage() {
+  if (!menuImageBlob) return;
+
+  const btn = document.getElementById('menu-image-copy-btn');
+  try {
+    await copyMenuImageBlob(menuImageBlob);
+    btn.textContent = '已复制 ✓';
+    setTimeout(() => {
+      btn.textContent = '复制图片';
+    }, 2000);
+  } catch (error) {
+    alert(error.message || '复制失败，请尝试保存到相册');
+  }
+}
+
+async function saveMenuImage() {
+  if (!menuImageBlob) return;
+
+  const btn = document.getElementById('menu-image-save-btn');
+  try {
+    const result = await saveMenuImageBlob(menuImageBlob, menuImageFilename);
+    btn.textContent = result === 'shared' ? '已打开分享 ✓' : '已下载 ✓';
+    setTimeout(() => {
+      btn.textContent = '保存到相册';
+    }, 2000);
+  } catch (error) {
+    if (error.name === 'AbortError') return;
+    alert(error.message || '保存失败，请重试');
+  }
 }
 
 function renderMeals() {
@@ -793,6 +874,7 @@ document.getElementById('generate-modal-close').addEventListener('click', closeG
 document.getElementById('generate-modal-backdrop').addEventListener('click', closeGenerateModal);
 document.getElementById('restore-menu-btn').addEventListener('click', restoreLastMenu);
 document.getElementById('share-btn').addEventListener('click', shareMenu);
+document.getElementById('menu-image-btn').addEventListener('click', openMenuImageModal);
 document.getElementById('copy-btn').addEventListener('click', copyShoppingList);
 document.getElementById('print-btn').addEventListener('click', printPage);
 document.getElementById('select-all-btn').addEventListener('click', () => setAllMeals(true));
@@ -819,6 +901,10 @@ document.getElementById('reset-recipes-btn').addEventListener('click', async () 
 
 document.getElementById('recipe-modal-close').addEventListener('click', closeRecipeModal);
 document.getElementById('recipe-modal-backdrop').addEventListener('click', closeRecipeModal);
+document.getElementById('menu-image-modal-close').addEventListener('click', closeMenuImageModal);
+document.getElementById('menu-image-modal-backdrop').addEventListener('click', closeMenuImageModal);
+document.getElementById('menu-image-copy-btn').addEventListener('click', copyMenuImage);
+document.getElementById('menu-image-save-btn').addEventListener('click', saveMenuImage);
 
 document.getElementById('results').addEventListener('click', (e) => {
   const nameBtn = e.target.closest('.meal-name-btn');
@@ -848,6 +934,10 @@ document.addEventListener('keydown', (e) => {
   if (e.key !== 'Escape') return;
   if (!document.getElementById('generate-modal').classList.contains('hidden')) {
     closeGenerateModal();
+    return;
+  }
+  if (!document.getElementById('menu-image-modal').classList.contains('hidden')) {
+    closeMenuImageModal();
     return;
   }
   closeRecipeModal();

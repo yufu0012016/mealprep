@@ -130,6 +130,40 @@ header h1 {
   gap: 0.6rem;
 }
 
+.menu-image-modal-box {
+  width: min(520px, 100%);
+}
+
+.menu-image-status {
+  font-size: 0.92rem;
+  color: var(--pencil-light);
+  margin-bottom: 0.75rem;
+}
+
+.menu-image-preview-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1rem;
+  max-height: min(58vh, 520px);
+  overflow: auto;
+  border: 1.5px dashed var(--pencil-faint);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.45);
+  padding: 0.5rem;
+}
+
+.menu-image-preview {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 6px;
+  box-shadow: 2px 3px 0 rgba(43, 43, 43, 0.08);
+}
+
+.menu-image-actions {
+  flex-wrap: wrap;
+}
+
 .settings-toggle {
   margin-top: 0.75rem;
   display: inline-block;
