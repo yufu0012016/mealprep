@@ -14,28 +14,55 @@ let purchasedItems = new Set();
 
 function loadRecipeLibrary() {
   const base = typeof RECIPES !== 'undefined' ? RECIPES : [];
-  const cached = loadEnrichedRecipes();
-  if (cached && cached.length === base.length) {
-    allRecipes = cached;
-    document.getElementById('enrich-status').textContent = '已加载完善版食谱';
-    return;
+  const { merged, newRecipes } = syncRecipeLibrary(base);
+  allRecipes = merged.map((r) => ({ ...r, steps: resolveRecipeSteps(r) }));
+  return newRecipes;
+}
+
+async function finishLoadRecipeLibrary(newRecipes) {
+  if (newRecipes.length > 0) {
+    setEnrichStatus(`发现 ${newRecipes.length} 道新菜，正在完善…`);
+    await processNewRecipes(newRecipes, document.getElementById('enrich-progress'));
+  } else {
+    saveEnrichedRecipes(allRecipes);
+    setEnrichStatus(`食谱库 ${allRecipes.length} 道 · 点击菜名查看做法`);
   }
-  allRecipes = heuristicEnrichAll(base);
+}
+
+async function processNewRecipes(newRecipes, progressEl) {
+  if (newRecipes.length === 0) return;
+
+  const apiKey = getApiKey();
+  const apiBase = getApiBase();
+  progressEl?.classList.remove('hidden');
+
+  const enriched = await enrichNewRecipes(newRecipes, {
+    apiKey,
+    apiBase,
+    onProgress: (msg) => {
+      if (progressEl) progressEl.textContent = msg;
+    },
+  });
+
+  allRecipes = [...allRecipes, ...enriched];
   saveEnrichedRecipes(allRecipes);
-  document.getElementById('enrich-status').textContent = '已用营养模型估算份量（可在设置中用 AI 精修）';
+  document.getElementById('library-count').textContent = allRecipes.length;
+
+  const via = apiKey ? 'AI' : '离线估算';
+  setEnrichStatus(`${newRecipes.length} 道新菜已用${via}完善`);
+  progressEl?.classList.add('hidden');
 }
 
 async function initApp() {
-  loadRecipeLibrary();
+  const newRecipes = loadRecipeLibrary();
   document.getElementById('library-count').textContent = allRecipes.length;
   document.getElementById('profile-desc').textContent = NUTRITION_PROFILE.description;
 
   const savedKey = getApiKey();
-  if (savedKey) {
-    document.getElementById('api-key').value = savedKey;
-  }
+  if (savedKey) document.getElementById('api-key').value = savedKey;
   document.getElementById('api-base').value = getApiBase();
 
+  await finishLoadRecipeLibrary(newRecipes);
   loadSharedMenuFromUrl();
   updateRecentMenuOption();
 }
@@ -131,12 +158,43 @@ function nutritionBadge(recipe) {
 function mealRowHtml(index, slot, recipe) {
   const checked = checkedMeals[index];
   return `
-    <label class="meal-pick-row ${checked ? 'is-selected' : 'is-unselected'}" data-meal-index="${index}">
-      <input type="checkbox" class="meal-checkbox" ${checked ? 'checked' : ''} />
+    <div class="meal-pick-row ${checked ? 'is-selected' : 'is-unselected'}" data-meal-index="${index}">
+      <label class="meal-check-wrap">
+        <input type="checkbox" class="meal-checkbox" ${checked ? 'checked' : ''} />
+      </label>
       <span class="meal-slot">${slot}</span>
-      <span class="meal-name">${recipe.name}${nutritionBadge(recipe)}</span>
+      <button type="button" class="meal-name-btn" data-meal-index="${index}" title="查看做法">
+        <span class="meal-name-text">${recipe.name}</span>${nutritionBadge(recipe)}
+      </button>
       <span class="meal-meta">${recipe.time} 分钟</span>
-    </label>`;
+    </div>`;
+}
+
+function getRecipeByMealIndex(index) {
+  return weekRecipes[index];
+}
+
+function showRecipeModal(recipe) {
+  if (!recipe) return;
+
+  const modal = document.getElementById('recipe-modal');
+  document.getElementById('recipe-modal-title').textContent = recipe.name;
+  document.getElementById('recipe-modal-meta').textContent =
+    `约 ${recipe.time} 分钟 · ${TARGET_SERVINGS} 人份` +
+    (recipe.nutrition ? ` · ≈${recipe.nutrition.caloriesPerPerson} kcal/人` : '');
+
+  const steps = resolveRecipeSteps(recipe);
+  document.getElementById('recipe-modal-steps').innerHTML = steps
+    .map((step) => `<li>${step}</li>`)
+    .join('');
+
+  modal.classList.remove('hidden');
+  document.body.classList.add('modal-open');
+}
+
+function closeRecipeModal() {
+  document.getElementById('recipe-modal').classList.add('hidden');
+  document.body.classList.remove('modal-open');
 }
 
 function renderMeals() {
@@ -411,14 +469,7 @@ function shareMenu() {
   }
 
   const url = buildShareUrl(getMenuSnapshot());
-  const days = dayLabels();
-  const lines = days.flatMap((day, i) => {
-    const lunch = weekRecipes[i * 2];
-    const dinner = weekRecipes[i * 2 + 1];
-    return [`${day} ${MEAL_SLOTS[0]}：${lunch.name}`, `${day} ${MEAL_SLOTS[1]}：${dinner.name}`];
-  });
-
-  navigator.clipboard.writeText(`本周菜单\n\n${lines.join('\n')}\n\n打开链接查看完整清单：\n${url}`);
+  navigator.clipboard.writeText(url);
 
   const btn = document.getElementById('share-btn');
   btn.textContent = '链接已复制 ✓';
@@ -485,13 +536,13 @@ function toggleSettings(show) {
   document.getElementById('settings-panel').classList.toggle('hidden', !show);
 }
 
-async function runEnrichment(useAi) {
-  const btn = document.getElementById('enrich-btn');
+async function runEnrichSteps() {
+  const btn = document.getElementById('enrich-steps-btn');
   const progress = document.getElementById('enrich-progress');
   const apiKey = document.getElementById('api-key').value.trim();
   const apiBase = document.getElementById('api-base').value.trim() || 'https://api.openai.com/v1';
 
-  if (useAi && !apiKey) {
+  if (!apiKey) {
     alert('请先在设置中填入 OpenAI API Key');
     toggleSettings(true);
     return;
@@ -501,25 +552,20 @@ async function runEnrichment(useAi) {
   btn.disabled = true;
   progress.classList.remove('hidden');
 
-  const base = typeof RECIPES !== 'undefined' ? RECIPES : allRecipes;
-
   try {
-    allRecipes = await enrichAllRecipes(base, {
+    allRecipes = await enrichMissingStepsWithAI(allRecipes, {
       apiKey,
       apiBase,
-      useAi,
-      onProgress: ({ current, total, name }) => {
-        progress.textContent = `完善中 ${current}/${total}：${name}`;
+      onProgress: (msg) => {
+        progress.textContent = msg;
       },
     });
     saveEnrichedRecipes(allRecipes);
     document.getElementById('library-count').textContent = allRecipes.length;
-    document.getElementById('enrich-status').textContent = useAi
-      ? 'AI 已完善全部食谱份量'
-      : '已重新估算全部食谱份量';
+    setEnrichStatus('AI 已为全部菜谱生成简易做法');
     if (weekRecipes.length) updateView();
   } catch (e) {
-    alert(`完善失败：${e.message}`);
+    alert(`生成失败：${e.message}`);
   } finally {
     btn.disabled = false;
     progress.classList.add('hidden');
@@ -542,14 +588,25 @@ document.getElementById('save-settings-btn').addEventListener('click', () => {
   );
   toggleSettings(false);
 });
-document.getElementById('enrich-btn').addEventListener('click', () => runEnrichment(true));
-document.getElementById('enrich-heuristic-btn').addEventListener('click', () => runEnrichment(false));
+document.getElementById('enrich-steps-btn').addEventListener('click', runEnrichSteps);
 document.getElementById('export-recipes-btn').addEventListener('click', () => downloadRecipesJson(allRecipes));
-document.getElementById('reset-recipes-btn').addEventListener('click', () => {
-  if (confirm('恢复原始食谱（清除 AI 完善结果）？')) {
+document.getElementById('reset-recipes-btn').addEventListener('click', async () => {
+  if (confirm('清除本地完善记录？')) {
     clearEnrichedRecipes();
-    loadRecipeLibrary();
+    const newRecipes = loadRecipeLibrary();
     document.getElementById('library-count').textContent = allRecipes.length;
+    await finishLoadRecipeLibrary(newRecipes);
+  }
+});
+
+document.getElementById('recipe-modal-close').addEventListener('click', closeRecipeModal);
+document.getElementById('recipe-modal-backdrop').addEventListener('click', closeRecipeModal);
+
+document.getElementById('results').addEventListener('click', (e) => {
+  const nameBtn = e.target.closest('.meal-name-btn');
+  if (nameBtn) {
+    showRecipeModal(getRecipeByMealIndex(Number(nameBtn.dataset.mealIndex)));
+    return;
   }
 });
 
@@ -567,6 +624,10 @@ document.getElementById('results').addEventListener('change', (e) => {
     else purchasedItems.delete(key);
     renderShoppingList(buildShoppingList(getActiveRecipes()));
   }
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeRecipeModal();
 });
 
 initApp();

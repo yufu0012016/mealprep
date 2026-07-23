@@ -82,6 +82,33 @@ function inferIngredientPortion(name) {
   return { amount: 200, unit: 'g' };
 }
 
+function resolveRecipeSteps(recipe) {
+  if (recipe.steps?.length) return recipe.steps;
+
+  const ins = recipe.instruction?.trim();
+  if (ins && ins.length > 8 && !/详见|链接|http/i.test(ins)) {
+    return ins
+      .split(/[。；!\n]+/)
+      .map((s) => s.trim())
+      .filter((s) => s.length > 2);
+  }
+
+  const ing =
+    recipe.ingredients
+      ?.filter((i) => !i.pantry && isFreshIngredient(i.name))
+      .map((i) => i.name)
+      .slice(0, 5)
+      .join('、') || '';
+
+  return [
+    `备好${recipe.name}所需材料${ing ? `：${ing}` : ''}`,
+    '主食材洗净切块，肉类可提前略腌',
+    '热锅少油，按先硬后软顺序下料翻炒或煮制',
+    '加入调料，中火煮至熟透并收汁',
+    '装盘即可，两人份一起享用',
+  ];
+}
+
 function heuristicEnrichRecipe(recipe) {
   const ingredients = recipe.ingredients.map((ing) => {
     if (ing.pantry || isPantryItem(ing.name)) {
@@ -103,6 +130,7 @@ function heuristicEnrichRecipe(recipe) {
     ...recipe,
     servings: NUTRITION_PROFILE.people,
     ingredients,
+    steps: resolveRecipeSteps(recipe),
     enriched: true,
     enrichedBy: 'heuristic',
     nutrition: estimateNutrition(ingredients),

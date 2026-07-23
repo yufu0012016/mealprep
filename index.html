@@ -63,10 +63,9 @@
       <p class="hint">Key 仅保存在本机浏览器，不会上传。兼容 OpenAI 格式的 API。</p>
       <div class="settings-actions">
         <button id="save-settings-btn" class="btn-secondary sketch-btn">保存设置</button>
-        <button id="enrich-btn" class="btn-primary sketch-btn">AI 完善全部食谱</button>
-        <button id="enrich-heuristic-btn" class="btn-secondary sketch-btn">离线重新估算</button>
+        <button id="enrich-steps-btn" class="btn-primary sketch-btn">AI 生成简易做法</button>
         <button id="export-recipes-btn" class="btn-secondary sketch-btn">导出 recipes.json</button>
-        <button id="reset-recipes-btn" class="btn-secondary sketch-btn">恢复原始</button>
+        <button id="reset-recipes-btn" class="btn-secondary sketch-btn">清除本地缓存</button>
       </div>
       <p id="enrich-progress" class="enrich-progress hidden"></p>
     </section>
@@ -90,7 +89,7 @@
             <button id="print-btn" class="btn-secondary sketch-btn">打印</button>
           </div>
         </div>
-        <p class="hint">勾选要一起备的餐 · 已选 <span id="selected-meal-count">0</span> / 14 餐</p>
+        <p class="hint">勾选要一起备的餐 · 点击菜名查看做法 · 已选 <span id="selected-meal-count">0</span> / 14 餐</p>
         <div id="meals-list" class="meals-grid"></div>
       </section>
 
@@ -106,6 +105,16 @@
           <div id="shopping-list" class="shopping-list"></div>
         </section>
       </div>
+    </div>
+  </div>
+
+  <div id="recipe-modal" class="recipe-modal hidden" role="dialog" aria-modal="true">
+    <div class="recipe-modal-backdrop" id="recipe-modal-backdrop"></div>
+    <div class="recipe-modal-box sketch-box">
+      <button type="button" id="recipe-modal-close" class="recipe-modal-close" aria-label="关闭">×</button>
+      <h3 id="recipe-modal-title" class="recipe-modal-title"></h3>
+      <p id="recipe-modal-meta" class="recipe-modal-meta"></p>
+      <ol id="recipe-modal-steps" class="recipe-modal-steps"></ol>
     </div>
   </div>
 
