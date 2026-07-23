@@ -33,6 +33,50 @@ function clearEnrichedRecipes() {
   localStorage.removeItem(STORAGE_KEY_ENRICHED);
 }
 
+function ingredientsAreUsable(ingredients) {
+  if (!Array.isArray(ingredients) || ingredients.length === 0) return false;
+  return ingredients.some((ing) => ing?.name?.trim());
+}
+
+function mergeRecipeWithCache(base, cached) {
+  if (!cached) return base;
+
+  if (cached.notionHash && base.notionHash && cached.notionHash !== base.notionHash) {
+    return base;
+  }
+
+  const baseIngredients = expandIngredients(base.ingredients || []);
+  const cachedIngredients = expandIngredients(cached.ingredients || []);
+  let ingredients = baseIngredients;
+
+  if (ingredientsAreUsable(baseIngredients) && ingredientsAreUsable(cachedIngredients)) {
+    ingredients = mergeIngredientPortions(baseIngredients, cachedIngredients);
+  } else if (ingredientsAreUsable(cachedIngredients)) {
+    ingredients = cachedIngredients;
+  }
+
+  if (
+    cached.enriched &&
+    cached.enrichedBy === 'ai' &&
+    ingredientsHavePortions(cachedIngredients) &&
+    !ingredientsHavePortions(ingredients)
+  ) {
+    ingredients = cachedIngredients;
+  }
+
+  return {
+    ...base,
+    ...cached,
+    ingredients,
+    instruction: base.instruction || cached.instruction,
+    notionHash: base.notionHash,
+    notionUrl: base.notionUrl || cached.notionUrl,
+    enriched: cached.enriched && ingredientsHavePortions(ingredients),
+    enrichedBy:
+      cached.enrichedBy === 'ai' && ingredientsHavePortions(ingredients) ? 'ai' : cached.enrichedBy,
+  };
+}
+
 function syncRecipeLibrary(baseRecipes) {
   const base = baseRecipes || [];
   const baseIds = new Set(base.map((r) => r.id));
@@ -43,8 +87,9 @@ function syncRecipeLibrary(baseRecipes) {
   const newRecipes = [];
 
   for (const recipe of base) {
-    if (cachedMap.has(recipe.id)) {
-      merged.push(cachedMap.get(recipe.id));
+    const cachedRecipe = cachedMap.get(recipe.id);
+    if (cachedRecipe) {
+      merged.push(mergeRecipeWithCache(recipe, cachedRecipe));
     } else {
       newRecipes.push(recipe);
     }

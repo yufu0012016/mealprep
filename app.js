@@ -46,29 +46,57 @@ function syncIncludeSundayFromMenu() {
   updateMealCountUi();
 }
 
+function updateGenerateModalSummary() {
+  const includeSun = readIncludeSundayFromCheckbox();
+  const days = includeSun ? FULL_WEEK_DAYS : DEFAULT_DAYS;
+  const count = getMealCount(includeSun);
+  const summary = document.getElementById('generate-modal-summary');
+  if (summary) summary.textContent = `${days} 天 × 午饭 + 晚饭 · 共 ${count} 餐`;
+}
+
 function updateMealCountUi() {
-  const plannedCount = weekRecipes.length || getMealCount(readIncludeSundayFromCheckbox());
+  const plannedCount = weekRecipes.length || getMealCount(false);
   const stat = document.getElementById('meal-count-stat');
   const total = document.getElementById('total-meal-count');
   const emptyNote = document.getElementById('empty-meal-note');
   const emptyTitle = document.getElementById('empty-meal-title');
   if (stat) stat.textContent = plannedCount;
-  if (total) total.textContent = weekRecipes.length || getMealCount(readIncludeSundayFromCheckbox());
+  if (total) total.textContent = weekRecipes.length || getMealCount(false);
   if (emptyTitle) emptyTitle.textContent = `点一下，随机抽 ${plannedCount} 道菜`;
-  if (emptyNote) {
-    const days = readIncludeSundayFromCheckbox() ? FULL_WEEK_DAYS : DEFAULT_DAYS;
-    emptyNote.textContent = `${days} 天 × 午饭 + 晚饭`;
+  if (emptyNote) emptyNote.textContent = `${DEFAULT_DAYS} 天 × 午饭 + 晚饭`;
+  updateGenerateModalSummary();
+}
+
+function openGenerateModal() {
+  const modal = document.getElementById('generate-modal');
+  const message = document.getElementById('generate-modal-message');
+  const checkbox = document.getElementById('include-sunday');
+  const last = getLastGeneratedAt();
+
+  if (checkbox) checkbox.checked = false;
+  includeSunday = false;
+
+  if (message) {
+    message.textContent = isWithinWeek(last)
+      ? '一周内已有菜单。重新生成会替换当前菜单。'
+      : '将从食谱库随机抽取本周菜单。';
   }
+
+  updateGenerateModalSummary();
+  modal.classList.remove('hidden');
+  document.body.classList.add('modal-open');
+}
+
+function closeGenerateModal() {
+  document.getElementById('generate-modal').classList.add('hidden');
+  document.body.classList.remove('modal-open');
 }
 
 function loadRecipeLibrary() {
   const base = typeof RECIPES !== 'undefined' ? RECIPES : [];
   const { merged, newRecipes } = syncRecipeLibrary(base);
-  allRecipes = merged.map((r) => ({
-    ...r,
-    ingredients: normalizeRecipeIngredients(r),
-    steps: resolveRecipeSteps(r),
-  }));
+  allRecipes = merged.map((r) => ensureRecipePortions(r));
+  saveEnrichedRecipes(allRecipes);
   return newRecipes;
 }
 
@@ -78,7 +106,7 @@ async function finishLoadRecipeLibrary(newRecipes) {
     await processNewRecipes(newRecipes, document.getElementById('enrich-progress'));
   } else {
     saveEnrichedRecipes(allRecipes);
-    setEnrichStatus(`食谱库 ${allRecipes.length} 道 · 点击菜名查看做法`);
+    setEnrichStatus(`食谱库 ${allRecipes.length} 道 · 已按 50kg 两人份估算份量与热量 · 点击菜名查看`);
   }
 }
 
@@ -120,7 +148,7 @@ async function initApp() {
   updateRecentMenuOption();
   syncIncludeSundayCheckbox();
   updateMealCountUi();
-  document.getElementById('include-sunday')?.addEventListener('change', updateMealCountUi);
+  document.getElementById('include-sunday')?.addEventListener('change', updateGenerateModalSummary);
 }
 
 function shuffle(arr) {
@@ -692,12 +720,6 @@ function isWithinWeek(timestamp) {
   return timestamp && Date.now() - timestamp < GENERATION_WINDOW_MS;
 }
 
-function shouldProceedWithGeneration() {
-  const last = getLastGeneratedAt();
-  if (!isWithinWeek(last)) return true;
-  return confirm('一周内已有菜单生成，你是否还希望继续？');
-}
-
 function doGenerate() {
   clearCollaborativeSession();
   includeSunday = readIncludeSundayFromCheckbox();
@@ -712,8 +734,7 @@ function doGenerate() {
 }
 
 function generate() {
-  if (!shouldProceedWithGeneration()) return;
-  doGenerate();
+  openGenerateModal();
 }
 
 function copyShoppingList() {
@@ -782,6 +803,13 @@ async function runEnrichSteps() {
 }
 
 document.getElementById('generate-btn').addEventListener('click', generate);
+document.getElementById('generate-confirm-btn').addEventListener('click', () => {
+  closeGenerateModal();
+  doGenerate();
+});
+document.getElementById('generate-cancel-btn').addEventListener('click', closeGenerateModal);
+document.getElementById('generate-modal-close').addEventListener('click', closeGenerateModal);
+document.getElementById('generate-modal-backdrop').addEventListener('click', closeGenerateModal);
 document.getElementById('restore-menu-btn').addEventListener('click', restoreLastMenu);
 document.getElementById('share-btn').addEventListener('click', shareMenu);
 document.getElementById('copy-btn').addEventListener('click', copyShoppingList);
@@ -836,7 +864,12 @@ document.getElementById('results').addEventListener('change', (e) => {
 });
 
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') closeRecipeModal();
+  if (e.key !== 'Escape') return;
+  if (!document.getElementById('generate-modal').classList.contains('hidden')) {
+    closeGenerateModal();
+    return;
+  }
+  closeRecipeModal();
 });
 
 initApp();

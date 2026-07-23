@@ -39,10 +39,6 @@
           <span class="stat-label">人份</span>
         </div>
       </div>
-      <label class="include-sunday-option">
-        <input type="checkbox" id="include-sunday" />
-        包括周日
-      </label>
       <button id="generate-btn" class="btn-primary sketch-btn">生成本周菜单</button>
       <button id="settings-btn" class="btn-secondary sketch-btn settings-toggle">⚙ 营养 & AI</button>
       <p class="enrich-status" id="enrich-status"></p>
@@ -108,6 +104,24 @@
           <p class="hint">根据上方勾选的餐次生成 · 公制 + 美国常用单位</p>
           <div id="shopping-list" class="shopping-list"></div>
         </section>
+      </div>
+    </div>
+  </div>
+
+  <div id="generate-modal" class="recipe-modal hidden" role="dialog" aria-modal="true" aria-labelledby="generate-modal-title">
+    <div class="recipe-modal-backdrop" id="generate-modal-backdrop"></div>
+    <div class="recipe-modal-box sketch-box generate-modal-box">
+      <button type="button" id="generate-modal-close" class="recipe-modal-close" aria-label="关闭">×</button>
+      <h3 id="generate-modal-title" class="recipe-modal-title">生成本周菜单？</h3>
+      <p id="generate-modal-message" class="generate-modal-message"></p>
+      <label class="include-sunday-option">
+        <input type="checkbox" id="include-sunday" />
+        包括周日
+      </label>
+      <p class="generate-modal-summary" id="generate-modal-summary">6 天 × 午饭 + 晚饭 · 共 12 餐</p>
+      <div class="generate-modal-actions">
+        <button type="button" id="generate-cancel-btn" class="btn-secondary sketch-btn">取消</button>
+        <button type="button" id="generate-confirm-btn" class="btn-primary sketch-btn">生成</button>
       </div>
     </div>
   </div>

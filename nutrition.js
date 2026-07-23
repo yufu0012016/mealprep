@@ -68,6 +68,52 @@ function normalizeRecipeIngredients(recipe) {
   }));
 }
 
+function ingredientsNeedPortions(ingredients) {
+  const expanded = expandIngredients(ingredients || []);
+  if (expanded.length === 0) return true;
+  return expanded.some((ing) => !isPantryItem(ing.name) && (!ing.unit || ing.unit === '适量'));
+}
+
+function ingredientsHavePortions(ingredients) {
+  const expanded = expandIngredients(ingredients || []);
+  const shoppable = expanded.filter((ing) => !isPantryItem(ing.name));
+  if (shoppable.length === 0) return false;
+  return shoppable.every((ing) => ing.unit && ing.unit !== '适量' && ing.amount);
+}
+
+function mergeIngredientPortions(baseIngredients, cachedIngredients) {
+  const cachedByName = new Map(
+    expandIngredients(cachedIngredients || []).map((ing) => [ing.name.trim(), ing])
+  );
+
+  return expandIngredients(baseIngredients || []).map((baseIng) => {
+    const cached = cachedByName.get(baseIng.name.trim());
+    if (cached?.unit && cached.unit !== '适量' && cached.amount) {
+      return {
+        ...baseIng,
+        amount: cached.amount,
+        unit: cached.unit,
+        pantry: Boolean(cached.pantry ?? baseIng.pantry) || isPantryItem(baseIng.name),
+      };
+    }
+    return baseIng;
+  });
+}
+
+function ensureRecipePortions(recipe) {
+  const needsPortions = ingredientsNeedPortions(recipe.ingredients);
+  const needsNutrition = !recipe.nutrition?.caloriesPerPerson;
+  if (!needsPortions && !needsNutrition) {
+    return {
+      ...recipe,
+      servings: recipe.servings || NUTRITION_PROFILE.people,
+      ingredients: normalizeRecipeIngredients(recipe),
+      steps: resolveRecipeSteps(recipe),
+    };
+  }
+  return heuristicEnrichRecipe(recipe);
+}
+
 function inferIngredientPortion(name) {
   const n = name.trim();
 
@@ -87,7 +133,7 @@ function inferIngredientPortion(name) {
   if (/豆腐|豆乳|豆浆/.test(n)) return { amount: 350, unit: 'g' };
   if (/奶酪|马苏里|cottage/i.test(n)) return { amount: 80, unit: 'g' };
 
-  if (/米饭|rigatoni|意面|面|年糕|饺子/.test(n)) return { amount: 200, unit: 'g' };
+  if (/米饭|rigatoni|意面|米线|面|年糕|饺子/.test(n)) return { amount: 200, unit: 'g' };
   if (/粉丝/.test(n)) return { amount: 80, unit: 'g' };
 
   if (/土豆|红薯|南瓜/.test(n)) return { amount: 350, unit: 'g' };
@@ -111,8 +157,14 @@ function inferIngredientPortion(name) {
   return { amount: 200, unit: 'g' };
 }
 
+function isUsableRecipeStep(step) {
+  const text = step?.trim();
+  return Boolean(text && text !== 'No content');
+}
+
 function resolveRecipeSteps(recipe) {
-  if (recipe.steps?.length) return recipe.steps;
+  const steps = recipe.steps?.filter(isUsableRecipeStep);
+  if (steps?.length) return steps;
 
   const ins = recipe.instruction?.trim();
   if (ins && ins.length > 8 && !/详见|链接|http/i.test(ins)) {
@@ -186,7 +238,7 @@ function estimateNutrition(ingredients) {
     } else if (/豆腐|豆乳/.test(n)) {
       protein += a * 0.08;
       calories += a * 0.8;
-    } else if (/米饭|面|粉丝|意面|rigatoni|年糕/.test(n)) {
+    } else if (/米饭|面|粉丝|意面|rigatoni|年糕|米线/.test(n)) {
       calories += a * 1.3;
     } else if (/土豆|红薯|南瓜|玉米/.test(n)) {
       calories += a * 0.9;
