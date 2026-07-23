@@ -5,11 +5,13 @@ const TARGET_SERVINGS = 2;
 const MEAL_SLOTS = ['午饭', '晚饭'];
 const STORAGE_KEY_LAST_GENERATED = 'mealprep_last_generated_at';
 const STORAGE_KEY_LAST_MENU = 'mealprep_last_menu';
+const STORAGE_KEY_PERSON_ID = 'mealprep_person_id';
 const GENERATION_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
+const FEMALE_EMOJIS = ['👩', '👩‍🦰', '👩‍🦱', '👩‍🦳', '👧', '🙋‍♀️'];
 
 let allRecipes = [];
 let weekRecipes = [];
-let checkedMeals = [];
+let mealClaims = [];
 let purchasedItems = new Set();
 
 function loadRecipeLibrary() {
@@ -98,8 +100,62 @@ function formatAmount(amount) {
   return String(amount);
 }
 
+function getPersonId() {
+  let id = localStorage.getItem(STORAGE_KEY_PERSON_ID);
+  if (!id) {
+    id = typeof crypto !== 'undefined' && crypto.randomUUID
+      ? crypto.randomUUID()
+      : `person-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+    localStorage.setItem(STORAGE_KEY_PERSON_ID, id);
+  }
+  return id;
+}
+
+function getPersonEmoji(personId) {
+  let hash = 0;
+  for (let i = 0; i < personId.length; i++) {
+    hash = (hash * 31 + personId.charCodeAt(i)) >>> 0;
+  }
+  return FEMALE_EMOJIS[hash % FEMALE_EMOJIS.length];
+}
+
+function getMyPerson() {
+  const personId = getPersonId();
+  return { personId, emoji: getPersonEmoji(personId) };
+}
+
+function isMealClaimed(index) {
+  return Boolean(mealClaims[index]);
+}
+
+function isMealClaimedByMe(index) {
+  return mealClaims[index]?.personId === getPersonId();
+}
+
+function canClaimMeal(index) {
+  const claim = mealClaims[index];
+  return !claim || claim.personId === getPersonId();
+}
+
+function normalizeMealClaims(rawClaims) {
+  if (!Array.isArray(rawClaims) || rawClaims.length !== MEAL_COUNT) {
+    return weekRecipes.map(() => null);
+  }
+  return rawClaims.map((claim) =>
+    claim?.personId ? { personId: claim.personId, emoji: claim.emoji || getPersonEmoji(claim.personId) } : null
+  );
+}
+
+function migrateCheckedMealsToClaims(checkedMeals) {
+  if (!Array.isArray(checkedMeals) || checkedMeals.length !== MEAL_COUNT) {
+    return weekRecipes.map(() => null);
+  }
+  const me = getMyPerson();
+  return checkedMeals.map((checked) => (checked ? { ...me } : null));
+}
+
 function getActiveRecipes() {
-  return weekRecipes.filter((_, i) => checkedMeals[i]);
+  return weekRecipes.filter((_, i) => isMealClaimed(i));
 }
 
 function getShopItemKey(item) {
@@ -156,15 +212,22 @@ function nutritionBadge(recipe) {
 }
 
 function mealRowHtml(index, slot, recipe) {
-  const checked = checkedMeals[index];
+  const claim = mealClaims[index];
+  const claimed = Boolean(claim);
+  const claimedByMe = isMealClaimedByMe(index);
+  const locked = claimed && !claimedByMe;
+  const emojiHtml = claim
+    ? `<span class="meal-claimer" title="${locked ? '已被选' : '我的选择'}">${claim.emoji}</span>`
+    : '';
+
   return `
-    <div class="meal-pick-row ${checked ? 'is-selected' : 'is-unselected'}" data-meal-index="${index}">
-      <label class="meal-check-wrap">
-        <input type="checkbox" class="meal-checkbox" ${checked ? 'checked' : ''} />
+    <div class="meal-pick-row ${claimed ? 'is-selected' : 'is-unselected'} ${locked ? 'is-locked' : ''}" data-meal-index="${index}">
+      <label class="meal-check-wrap ${locked ? 'is-disabled' : ''}">
+        <input type="checkbox" class="meal-checkbox" ${claimed ? 'checked' : ''} ${locked ? 'disabled' : ''} />
       </label>
       <span class="meal-slot">${slot}</span>
       <button type="button" class="meal-name-btn" data-meal-index="${index}" title="查看做法">
-        <span class="meal-name-text">${recipe.name}</span>${nutritionBadge(recipe)}
+        <span class="meal-name-text">${recipe.name}</span>${emojiHtml}${nutritionBadge(recipe)}
       </button>
       <span class="meal-meta">${recipe.time} 分钟</span>
     </div>`;
@@ -207,7 +270,7 @@ function renderMeals() {
       const dinnerIdx = dayIndex * 2 + 1;
       const lunch = weekRecipes[lunchIdx];
       const dinner = weekRecipes[dinnerIdx];
-      const daySelected = checkedMeals[lunchIdx] || checkedMeals[dinnerIdx];
+      const daySelected = isMealClaimed(lunchIdx) || isMealClaimed(dinnerIdx);
       return `
     <div class="day-card sketch-box ${daySelected ? 'day-has-selected' : 'day-none-selected'}">
       <h3 class="day-title">${day}</h3>
@@ -304,6 +367,8 @@ function updateView() {
   renderWeekPlan();
   renderShoppingList(buildShoppingList(getActiveRecipes()));
   saveLastMenu();
+  const emojiEl = document.getElementById('my-person-emoji');
+  if (emojiEl) emojiEl.textContent = getMyPerson().emoji;
 }
 
 function showResultsView() {
@@ -337,7 +402,7 @@ function saveLastMenu() {
     JSON.stringify({
       generatedAt: getLastGeneratedAt() || Date.now(),
       recipeIds: weekRecipes.map((r) => r.id),
-      checkedMeals: [...checkedMeals],
+      mealClaims: mealClaims.map((claim) => (claim ? { ...claim } : null)),
       purchasedItems: [...purchasedItems],
     })
   );
@@ -379,13 +444,25 @@ function restoreLastMenu() {
   }
 }
 
-function setAllMeals(checked) {
-  checkedMeals = weekRecipes.map(() => checked);
+function setAllMeals(claim) {
+  const me = getMyPerson();
+  mealClaims = mealClaims.map((existing) => {
+    if (claim) {
+      return existing || { ...me };
+    }
+    return existing?.personId === me.personId ? null : existing;
+  });
   updateView();
 }
 
 function onMealCheckboxChange(index, checked) {
-  checkedMeals[index] = checked;
+  if (!canClaimMeal(index) && checked) return;
+
+  if (checked) {
+    mealClaims[index] = { ...getMyPerson() };
+  } else if (isMealClaimedByMe(index)) {
+    mealClaims[index] = null;
+  }
   updateView();
 }
 
@@ -402,7 +479,7 @@ function getMenuSnapshot() {
   return {
     generatedAt: getLastGeneratedAt() || Date.now(),
     recipeIds: weekRecipes.map((r) => r.id),
-    checkedMeals: [...checkedMeals],
+    mealClaims: mealClaims.map((claim) => (claim ? { ...claim } : null)),
     purchasedItems: [...purchasedItems],
   };
 }
@@ -438,8 +515,11 @@ function applyMenuSnapshot(snap) {
   }
 
   weekRecipes = restored;
-  checkedMeals =
-    snap.checkedMeals?.length === MEAL_COUNT ? [...snap.checkedMeals] : weekRecipes.map(() => true);
+  if (snap.mealClaims?.length === MEAL_COUNT) {
+    mealClaims = normalizeMealClaims(snap.mealClaims);
+  } else {
+    mealClaims = migrateCheckedMealsToClaims(snap.checkedMeals);
+  }
   purchasedItems = new Set(snap.purchasedItems || []);
   saveLastGeneratedAt(snap.generatedAt || Date.now());
   updateView();
@@ -495,7 +575,7 @@ function doGenerate() {
   weekRecipes = pickRecipes();
   if (weekRecipes.length === 0) return;
 
-  checkedMeals = weekRecipes.map(() => true);
+  mealClaims = weekRecipes.map(() => null);
   purchasedItems.clear();
   saveLastGeneratedAt();
   updateView();

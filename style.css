@@ -346,6 +346,29 @@ header h1 {
   font-weight: 400;
 }
 
+.meal-claimer {
+  margin-left: 0.35rem;
+  font-size: 1.05rem;
+  line-height: 1;
+}
+
+.meal-pick-row.is-locked {
+  opacity: 0.72;
+}
+
+.meal-pick-row.is-locked .meal-check-wrap.is-disabled {
+  cursor: not-allowed;
+}
+
+.meal-pick-row.is-locked .meal-checkbox:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+#my-person-emoji {
+  font-size: 1.1rem;
+}
+
 .meal-pick-row.is-selected {
   background: rgba(255, 240, 200, 0.55);
   border-color: var(--sketch-red);
