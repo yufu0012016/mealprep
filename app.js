@@ -1,11 +1,14 @@
 const MEALS_PER_DAY = 2;
-const DAYS = 7;
-const MEAL_COUNT = MEALS_PER_DAY * DAYS;
+const WEEKDAYS = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+const DEFAULT_DAYS = 6;
+const FULL_WEEK_DAYS = 7;
 const TARGET_SERVINGS = 2;
 const MEAL_SLOTS = ['午饭', '晚饭'];
 const STORAGE_KEY_LAST_GENERATED = 'mealprep_last_generated_at';
 const STORAGE_KEY_LAST_MENU = 'mealprep_last_menu';
 const STORAGE_KEY_PERSON_ID = 'mealprep_person_id';
+const STORAGE_KEY_SESSION_PERSON_ID = 'mealprep_session_person_id';
+const STORAGE_KEY_COLLAB_SESSION = 'mealprep_collaborative_session';
 const GENERATION_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 const FEMALE_EMOJIS = ['👩', '👩‍🦰', '👩‍🦱', '👩‍🦳', '👧', '🙋‍♀️'];
 
@@ -13,11 +16,59 @@ let allRecipes = [];
 let weekRecipes = [];
 let mealClaims = [];
 let purchasedItems = new Set();
+let includeSunday = false;
+
+function getMealCount(includeSun = includeSunday) {
+  return MEALS_PER_DAY * (includeSun ? FULL_WEEK_DAYS : DEFAULT_DAYS);
+}
+
+function isValidMealCount(count) {
+  return count === getMealCount(false) || count === getMealCount(true);
+}
+
+function getDayLabels(includeSun = includeSunday) {
+  return includeSun ? [...WEEKDAYS] : WEEKDAYS.slice(0, DEFAULT_DAYS);
+}
+
+function readIncludeSundayFromCheckbox() {
+  return document.getElementById('include-sunday')?.checked ?? false;
+}
+
+function syncIncludeSundayCheckbox() {
+  const checkbox = document.getElementById('include-sunday');
+  if (checkbox) checkbox.checked = includeSunday;
+}
+
+function syncIncludeSundayFromMenu() {
+  if (weekRecipes.length === getMealCount(true)) includeSunday = true;
+  else if (weekRecipes.length === getMealCount(false)) includeSunday = false;
+  syncIncludeSundayCheckbox();
+  updateMealCountUi();
+}
+
+function updateMealCountUi() {
+  const plannedCount = weekRecipes.length || getMealCount(readIncludeSundayFromCheckbox());
+  const stat = document.getElementById('meal-count-stat');
+  const total = document.getElementById('total-meal-count');
+  const emptyNote = document.getElementById('empty-meal-note');
+  const emptyTitle = document.getElementById('empty-meal-title');
+  if (stat) stat.textContent = plannedCount;
+  if (total) total.textContent = weekRecipes.length || getMealCount(readIncludeSundayFromCheckbox());
+  if (emptyTitle) emptyTitle.textContent = `点一下，随机抽 ${plannedCount} 道菜`;
+  if (emptyNote) {
+    const days = readIncludeSundayFromCheckbox() ? FULL_WEEK_DAYS : DEFAULT_DAYS;
+    emptyNote.textContent = `${days} 天 × 午饭 + 晚饭`;
+  }
+}
 
 function loadRecipeLibrary() {
   const base = typeof RECIPES !== 'undefined' ? RECIPES : [];
   const { merged, newRecipes } = syncRecipeLibrary(base);
-  allRecipes = merged.map((r) => ({ ...r, steps: resolveRecipeSteps(r) }));
+  allRecipes = merged.map((r) => ({
+    ...r,
+    ingredients: normalizeRecipeIngredients(r),
+    steps: resolveRecipeSteps(r),
+  }));
   return newRecipes;
 }
 
@@ -67,6 +118,9 @@ async function initApp() {
   await finishLoadRecipeLibrary(newRecipes);
   loadSharedMenuFromUrl();
   updateRecentMenuOption();
+  syncIncludeSundayCheckbox();
+  updateMealCountUi();
+  document.getElementById('include-sunday')?.addEventListener('change', updateMealCountUi);
 }
 
 function shuffle(arr) {
@@ -79,13 +133,14 @@ function shuffle(arr) {
 }
 
 function pickRecipes() {
+  const mealCount = getMealCount(readIncludeSundayFromCheckbox());
   const quickMeals = allRecipes.filter((r) => r.category === '快手');
-  const pool = quickMeals.length >= MEAL_COUNT ? quickMeals : allRecipes;
-  if (pool.length < MEAL_COUNT) {
-    alert(`食谱库只有 ${pool.length} 道菜，无法生成 ${MEAL_COUNT} 道`);
+  const pool = quickMeals.length >= mealCount ? quickMeals : allRecipes;
+  if (pool.length < mealCount) {
+    alert(`食谱库只有 ${pool.length} 道菜，无法生成 ${mealCount} 道`);
     return [];
   }
-  return shuffle(pool).slice(0, MEAL_COUNT);
+  return shuffle(pool).slice(0, mealCount);
 }
 
 function scaleAmount(amount, recipeServings) {
@@ -100,15 +155,50 @@ function formatAmount(amount) {
   return String(amount);
 }
 
-function getPersonId() {
+function createPersonId() {
+  return typeof crypto !== 'undefined' && crypto.randomUUID
+    ? crypto.randomUUID()
+    : `person-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function getLocalPersonId() {
   let id = localStorage.getItem(STORAGE_KEY_PERSON_ID);
   if (!id) {
-    id = typeof crypto !== 'undefined' && crypto.randomUUID
-      ? crypto.randomUUID()
-      : `person-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+    id = createPersonId();
     localStorage.setItem(STORAGE_KEY_PERSON_ID, id);
   }
   return id;
+}
+
+function getSessionPersonId() {
+  let id = sessionStorage.getItem(STORAGE_KEY_SESSION_PERSON_ID);
+  if (!id) {
+    id = createPersonId();
+    sessionStorage.setItem(STORAGE_KEY_SESSION_PERSON_ID, id);
+  }
+  return id;
+}
+
+function beginCollaborativeSession() {
+  sessionStorage.setItem(STORAGE_KEY_COLLAB_SESSION, '1');
+  sessionStorage.removeItem(STORAGE_KEY_SESSION_PERSON_ID);
+}
+
+function clearCollaborativeSession() {
+  sessionStorage.removeItem(STORAGE_KEY_COLLAB_SESSION);
+  sessionStorage.removeItem(STORAGE_KEY_SESSION_PERSON_ID);
+}
+
+function getPersonId() {
+  if (sessionStorage.getItem(STORAGE_KEY_COLLAB_SESSION) !== '1') {
+    return getLocalPersonId();
+  }
+
+  const localId = getLocalPersonId();
+  if (mealClaims.some((claim) => claim?.personId === localId)) {
+    return localId;
+  }
+  return getSessionPersonId();
 }
 
 function getPersonEmoji(personId) {
@@ -125,7 +215,7 @@ function getMyPerson() {
 }
 
 function isMealClaimed(index) {
-  return Boolean(mealClaims[index]);
+  return Boolean(mealClaims[index]?.personId);
 }
 
 function isMealClaimedByMe(index) {
@@ -134,24 +224,22 @@ function isMealClaimedByMe(index) {
 
 function canClaimMeal(index) {
   const claim = mealClaims[index];
-  return !claim || claim.personId === getPersonId();
+  return !claim?.personId || claim.personId === getPersonId();
 }
 
 function normalizeMealClaims(rawClaims) {
-  if (!Array.isArray(rawClaims) || rawClaims.length !== MEAL_COUNT) {
-    return weekRecipes.map(() => null);
+  if (!Array.isArray(rawClaims) || rawClaims.length !== weekRecipes.length) {
+    return emptyMealClaims();
   }
   return rawClaims.map((claim) =>
-    claim?.personId ? { personId: claim.personId, emoji: claim.emoji || getPersonEmoji(claim.personId) } : null
+    claim?.personId
+      ? { personId: claim.personId, emoji: claim.emoji || getPersonEmoji(claim.personId) }
+      : null
   );
 }
 
-function migrateCheckedMealsToClaims(checkedMeals) {
-  if (!Array.isArray(checkedMeals) || checkedMeals.length !== MEAL_COUNT) {
-    return weekRecipes.map(() => null);
-  }
-  const me = getMyPerson();
-  return checkedMeals.map((checked) => (checked ? { ...me } : null));
+function emptyMealClaims() {
+  return weekRecipes.map(() => null);
 }
 
 function getActiveRecipes() {
@@ -166,7 +254,7 @@ function buildShoppingList(recipes) {
   const map = new Map();
 
   for (const recipe of recipes) {
-    for (const ing of recipe.ingredients) {
+    for (const ing of normalizeRecipeIngredients(recipe)) {
       if (ing.pantry || !isFreshIngredient(ing.name)) continue;
 
       const isFlexible = ing.unit === '适量';
@@ -202,7 +290,7 @@ function buildShoppingList(recipes) {
 }
 
 function dayLabels() {
-  return ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+  return getDayLabels(includeSunday);
 }
 
 function nutritionBadge(recipe) {
@@ -237,19 +325,38 @@ function getRecipeByMealIndex(index) {
   return weekRecipes[index];
 }
 
+function formatIngredientAmount(ing, recipeServings = TARGET_SERVINGS) {
+  if (ing.unit === '适量') return '适量';
+  const amount = scaleAmount(ing.amount, recipeServings);
+  return `${formatAmount(amount)} ${ing.unit}`;
+}
+
 function showRecipeModal(recipe) {
   if (!recipe) return;
 
   const modal = document.getElementById('recipe-modal');
+  const ingredients = normalizeRecipeIngredients(recipe);
   document.getElementById('recipe-modal-title').textContent = recipe.name;
   document.getElementById('recipe-modal-meta').textContent =
     `约 ${recipe.time} 分钟 · ${TARGET_SERVINGS} 人份` +
     (recipe.nutrition ? ` · ≈${recipe.nutrition.caloriesPerPerson} kcal/人` : '');
 
+  const ingredientsEl = document.getElementById('recipe-modal-ingredients');
+  if (ingredients.length === 0) {
+    ingredientsEl.innerHTML = '<li class="recipe-modal-empty">暂无食材清单</li>';
+  } else {
+    ingredientsEl.innerHTML = ingredients
+      .map(
+        (ing) =>
+          `<li><span class="recipe-ing-name">${ing.name}</span><span class="recipe-ing-amount">${formatIngredientAmount(ing, recipe.servings)}</span></li>`
+      )
+      .join('');
+  }
+
   const steps = resolveRecipeSteps(recipe);
-  document.getElementById('recipe-modal-steps').innerHTML = steps
-    .map((step) => `<li>${step}</li>`)
-    .join('');
+  document.getElementById('recipe-modal-steps').innerHTML = steps.length
+    ? steps.map((step) => `<li>${step}</li>`).join('')
+    : '<li class="recipe-modal-empty">暂无做法</li>';
 
   modal.classList.remove('hidden');
   document.body.classList.add('modal-open');
@@ -306,7 +413,7 @@ function shopItemHtml(item, purchased) {
     ? `<span class="shop-imperial">${item.displayImperial}</span>`
     : '';
   return `
-    <label class="shop-item ${purchased ? 'shop-item-purchased' : ''}" data-shop-key="${item.key}">
+    <label class="shop-item shop-row ${purchased ? 'shop-item-purchased' : ''}" data-shop-key="${item.key}">
       <input type="checkbox" class="shop-checkbox" ${purchased ? 'checked' : ''} />
       <span class="shop-name">${item.name}</span>
       <span class="shop-amount">
@@ -314,6 +421,15 @@ function shopItemHtml(item, purchased) {
         ${imperialHtml}
       </span>
     </label>`;
+}
+
+function shopListHeaderHtml() {
+  return `
+    <div class="shop-header shop-row" aria-hidden="true">
+      <span class="shop-col-check"></span>
+      <span class="shop-col-name">食材</span>
+      <span class="shop-col-amount">数量</span>
+    </div>`;
 }
 
 function renderShoppingList(items) {
@@ -342,7 +458,7 @@ function renderShoppingList(items) {
   const pending = items.filter((i) => !purchasedItems.has(i.key));
   const purchased = items.filter((i) => purchasedItems.has(i.key));
 
-  let html = '';
+  let html = shopListHeaderHtml();
   if (pending.length > 0) {
     html += `<div class="shop-pending">${pending.map((i) => shopItemHtml(i, false)).join('')}</div>`;
   } else {
@@ -367,6 +483,7 @@ function updateView() {
   renderWeekPlan();
   renderShoppingList(buildShoppingList(getActiveRecipes()));
   saveLastMenu();
+  syncIncludeSundayFromMenu();
   const emojiEl = document.getElementById('my-person-emoji');
   if (emojiEl) emojiEl.textContent = getMyPerson().emoji;
 }
@@ -395,12 +512,13 @@ function loadLastMenuSnapshot() {
 }
 
 function saveLastMenu() {
-  if (weekRecipes.length !== MEAL_COUNT) return;
+  if (!isValidMealCount(weekRecipes.length)) return;
 
   localStorage.setItem(
     STORAGE_KEY_LAST_MENU,
     JSON.stringify({
       generatedAt: getLastGeneratedAt() || Date.now(),
+      includeSunday,
       recipeIds: weekRecipes.map((r) => r.id),
       mealClaims: mealClaims.map((claim) => (claim ? { ...claim } : null)),
       purchasedItems: [...purchasedItems],
@@ -411,7 +529,7 @@ function saveLastMenu() {
 
 function hasRecentMenu() {
   const snap = loadLastMenuSnapshot();
-  return Boolean(snap && isWithinWeek(snap.generatedAt) && snap.recipeIds?.length === MEAL_COUNT);
+  return Boolean(snap && isWithinWeek(snap.generatedAt) && isValidMealCount(snap.recipeIds?.length));
 }
 
 function updateRecentMenuOption() {
@@ -478,6 +596,7 @@ function saveLastGeneratedAt(timestamp = Date.now()) {
 function getMenuSnapshot() {
   return {
     generatedAt: getLastGeneratedAt() || Date.now(),
+    includeSunday,
     recipeIds: weekRecipes.map((r) => r.id),
     mealClaims: mealClaims.map((claim) => (claim ? { ...claim } : null)),
     purchasedItems: [...purchasedItems],
@@ -506,22 +625,30 @@ function buildShareUrl(snapshot) {
   return url.toString();
 }
 
-function applyMenuSnapshot(snap) {
+function applyMenuSnapshot(snap, { fromShare = false } = {}) {
   const recipeMap = new Map(allRecipes.map((r) => [r.id, r]));
   const restored = snap.recipeIds.map((id) => recipeMap.get(id));
+  const mealCount = snap.recipeIds.length;
 
-  if (restored.length !== MEAL_COUNT || restored.some((r) => !r)) {
+  if (!isValidMealCount(mealCount) || restored.length !== mealCount || restored.some((r) => !r)) {
     throw new Error('食谱库版本不一致，无法加载该菜单');
   }
 
-  weekRecipes = restored;
-  if (snap.mealClaims?.length === MEAL_COUNT) {
-    mealClaims = normalizeMealClaims(snap.mealClaims);
+  if (fromShare) {
+    beginCollaborativeSession();
   } else {
-    mealClaims = migrateCheckedMealsToClaims(snap.checkedMeals);
+    clearCollaborativeSession();
   }
+
+  includeSunday = snap.includeSunday ?? mealCount === getMealCount(true);
+  weekRecipes = restored;
+  mealClaims =
+    snap.mealClaims?.length === mealCount
+      ? normalizeMealClaims(snap.mealClaims)
+      : emptyMealClaims();
   purchasedItems = new Set(snap.purchasedItems || []);
   saveLastGeneratedAt(snap.generatedAt || Date.now());
+  syncIncludeSundayCheckbox();
   updateView();
   showResultsView();
 }
@@ -531,7 +658,7 @@ function loadSharedMenuFromUrl() {
   if (!encoded) return false;
 
   try {
-    applyMenuSnapshot(decodeSharePayload(encoded));
+    applyMenuSnapshot(decodeSharePayload(encoded), { fromShare: true });
     history.replaceState({}, '', window.location.pathname);
     setEnrichStatus('已打开分享的菜单');
     return true;
@@ -543,7 +670,7 @@ function loadSharedMenuFromUrl() {
 }
 
 function shareMenu() {
-  if (weekRecipes.length !== MEAL_COUNT) {
+  if (!isValidMealCount(weekRecipes.length)) {
     alert('请先生成菜单');
     return;
   }
@@ -572,10 +699,12 @@ function shouldProceedWithGeneration() {
 }
 
 function doGenerate() {
+  clearCollaborativeSession();
+  includeSunday = readIncludeSundayFromCheckbox();
   weekRecipes = pickRecipes();
   if (weekRecipes.length === 0) return;
 
-  mealClaims = weekRecipes.map(() => null);
+  mealClaims = emptyMealClaims();
   purchasedItems.clear();
   saveLastGeneratedAt();
   updateView();

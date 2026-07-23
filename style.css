@@ -91,6 +91,22 @@ header h1 {
   padding: 1.75rem;
 }
 
+.include-sunday-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-bottom: 0.85rem;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.include-sunday-option input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  cursor: pointer;
+}
+
 .settings-toggle {
   margin-top: 0.75rem;
   display: inline-block;
@@ -489,6 +505,39 @@ body.modal-open {
   padding-bottom: 0.5rem;
 }
 
+.recipe-modal-section {
+  font-family: "Caveat", cursive;
+  font-size: 1.35rem;
+  margin: 0 0 0.45rem;
+}
+
+.recipe-modal-ingredients {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.recipe-modal-ingredients li {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.75rem;
+  padding-bottom: 0.25rem;
+  border-bottom: 1px dotted rgba(107, 107, 107, 0.18);
+}
+
+.recipe-ing-amount {
+  color: var(--pencil-light);
+  white-space: nowrap;
+}
+
+.recipe-modal-empty {
+  color: var(--pencil-faint);
+  font-style: italic;
+}
+
 .recipe-modal-steps {
   padding-left: 1.25rem;
   display: flex;
@@ -564,10 +613,32 @@ body.modal-open {
   overflow-y: auto;
 }
 
-.shop-item {
-  display: flex;
-  align-items: center;
+.shop-row {
+  display: grid;
+  grid-template-columns: 1.1rem 1fr minmax(5.5rem, auto);
   gap: 0.6rem;
+  align-items: center;
+}
+
+.shop-header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: rgba(255, 252, 247, 0.95);
+  padding: 0.15rem 0.2rem 0.35rem;
+  margin-bottom: 0.15rem;
+  font-size: 0.85rem;
+  color: var(--pencil-light);
+  border-bottom: 1px dashed var(--pencil-faint);
+}
+
+.shop-col-amount,
+.shop-amount {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.shop-item {
   padding: 0.4rem 0.2rem;
   cursor: pointer;
   border-bottom: 1px dotted rgba(107, 107, 107, 0.25);

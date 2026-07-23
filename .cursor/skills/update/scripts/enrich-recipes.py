@@ -14,6 +14,21 @@ from pathlib import Path
 SCRIPT_DIR = Path(__file__).resolve().parent
 ROOT = SCRIPT_DIR.parents[3]
 CONFIG = json.loads((SCRIPT_DIR / "config.json").read_text(encoding="utf-8"))
+ENV_LOCAL = ROOT / ".env.local"
+
+
+def load_local_env() -> None:
+    if not ENV_LOCAL.exists():
+        return
+    for line in ENV_LOCAL.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        key = key.strip()
+        value = value.strip().strip('"').strip("'")
+        if key and key not in os.environ:
+            os.environ[key] = value
 
 NUTRITION_PROFILE = {
     "people": 2,
@@ -204,8 +219,26 @@ def write_outputs(recipes: list[dict]) -> None:
 
 
 def main() -> int:
+    import argparse
+
+    parser = argparse.ArgumentParser(description="AI-enrich mealprep recipes")
+    parser.add_argument(
+        "--require-ai",
+        action="store_true",
+        help="Fail if OPENAI_API_KEY is missing (do not use heuristic fallback)",
+    )
+    args = parser.parse_args()
+
+    load_local_env()
     api_key = os.environ.get("OPENAI_API_KEY", "").strip()
     api_base = os.environ.get("OPENAI_API_BASE", "https://api.openai.com/v1").strip()
+
+    if args.require_ai and not api_key:
+        print(
+            f"error: set OPENAI_API_KEY in {ENV_LOCAL} (gitignored) or environment",
+            file=sys.stderr,
+        )
+        return 1
 
     recipes_path = ROOT / CONFIG["recipesJson"]
     recipes = json.loads(recipes_path.read_text(encoding="utf-8"))

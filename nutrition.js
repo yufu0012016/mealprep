@@ -39,6 +39,35 @@ function isFreshIngredient(name) {
   return !isPantryItem(trimmed);
 }
 
+function expandIngredients(ingredients) {
+  if (!Array.isArray(ingredients)) return [];
+
+  const expanded = [];
+  for (const ing of ingredients) {
+    const name = ing.name?.trim();
+    if (!name) continue;
+
+    if (/[,，、]/.test(name)) {
+      for (const part of name.split(/[,，、]/)) {
+        const trimmed = part.trim();
+        if (trimmed) expanded.push({ ...ing, name: trimmed });
+      }
+      continue;
+    }
+
+    expanded.push({ ...ing, name });
+  }
+
+  return expanded;
+}
+
+function normalizeRecipeIngredients(recipe) {
+  return expandIngredients(recipe.ingredients).map((ing) => ({
+    ...ing,
+    pantry: Boolean(ing.pantry) || isPantryItem(ing.name),
+  }));
+}
+
 function inferIngredientPortion(name) {
   const n = name.trim();
 
@@ -110,7 +139,7 @@ function resolveRecipeSteps(recipe) {
 }
 
 function heuristicEnrichRecipe(recipe) {
-  const ingredients = recipe.ingredients.map((ing) => {
+  const ingredients = expandIngredients(recipe.ingredients).map((ing) => {
     if (ing.pantry || isPantryItem(ing.name)) {
       return { ...ing, pantry: true, unit: ing.unit || '适量' };
     }

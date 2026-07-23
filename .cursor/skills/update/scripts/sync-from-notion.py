@@ -74,13 +74,25 @@ def category_from_tags(tags: list[str]) -> str:
 
 def parse_ingredients(raw) -> list[dict]:
     names: list[str] = []
+    seen: set[str] = set()
     for item in raw or []:
         if not item:
             continue
-        name = item[0].strip()
-        if name:
-            names.append(INGREDIENT_MAP.get(name, name))
+        text = item[0].strip()
+        if not text:
+            continue
+        for part in re.split(r"[,，、]", text):
+            name = INGREDIENT_MAP.get(part.strip(), part.strip())
+            if name and name not in seen:
+                seen.add(name)
+                names.append(name)
     return [{"name": name, "amount": 1, "unit": "适量"} for name in names]
+
+
+def ingredients_look_valid(ingredients: list[dict]) -> bool:
+    if not ingredients:
+        return False
+    return all("," not in item.get("name", "") and "，" not in item.get("name", "") for item in ingredients)
 
 
 def parse_craving(raw) -> float:
@@ -176,8 +188,15 @@ def merge_with_existing(notion_recipes: list[dict], local_recipes: list[dict]) -
             for field in ("enriched", "enrichedBy", "steps", "stepsAi", "nutrition"):
                 if field in existing:
                     recipe[field] = existing[field]
-            if existing.get("enriched") and existing.get("notionHash") == notion_hash(recipe):
+            if (
+                existing.get("enrichedBy") == "ai"
+                and ingredients_look_valid(existing.get("ingredients", []))
+                and existing.get("notionHash") == notion_hash(recipe)
+            ):
                 recipe["ingredients"] = existing["ingredients"]
+            else:
+                for field in ("enriched", "enrichedBy", "stepsAi", "nutrition"):
+                    recipe.pop(field, None)
         else:
             base_id = slugify(recipe["name"])
             recipe_id = base_id

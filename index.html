@@ -31,7 +31,7 @@
           <span class="stat-label">食谱库</span>
         </div>
         <div class="stat">
-          <span class="stat-num">14</span>
+          <span class="stat-num" id="meal-count-stat">12</span>
           <span class="stat-label">本周餐次</span>
         </div>
         <div class="stat">
@@ -39,6 +39,10 @@
           <span class="stat-label">人份</span>
         </div>
       </div>
+      <label class="include-sunday-option">
+        <input type="checkbox" id="include-sunday" />
+        包括周日
+      </label>
       <button id="generate-btn" class="btn-primary sketch-btn">生成本周菜单</button>
       <button id="settings-btn" class="btn-secondary sketch-btn settings-toggle">⚙ 营养 & AI</button>
       <p class="enrich-status" id="enrich-status"></p>
@@ -71,8 +75,8 @@
     </section>
 
     <div id="empty-state" class="empty">
-      <p>点一下，随机抽 14 道菜</p>
-      <p class="empty-note">7 天 × 午饭 + 晚饭</p>
+      <p id="empty-meal-title">点一下，随机抽 12 道菜</p>
+      <p class="empty-note" id="empty-meal-note">6 天 × 午饭 + 晚饭</p>
       <button id="restore-menu-btn" class="btn-secondary sketch-btn restore-menu-btn hidden">回到最近生成的菜单</button>
       <p id="restore-menu-hint" class="empty-note hidden"></p>
     </div>
@@ -89,7 +93,7 @@
             <button id="print-btn" class="btn-secondary sketch-btn">打印</button>
           </div>
         </div>
-        <p class="hint">勾选想做的餐 · 菜名旁会显示你的头像 · 分享后别人不能选已被占的餐 · 已选 <span id="selected-meal-count">0</span> / 14 餐 · 你是 <span id="my-person-emoji" aria-hidden="true"></span></p>
+        <p class="hint">勾选想做的餐 · 菜名旁会显示你的头像 · 分享后别人不能选已被占的餐 · 已选 <span id="selected-meal-count">0</span> / <span id="total-meal-count">12</span> 餐 · 你是 <span id="my-person-emoji" aria-hidden="true"></span></p>
         <div id="meals-list" class="meals-grid"></div>
       </section>
 
@@ -114,6 +118,9 @@
       <button type="button" id="recipe-modal-close" class="recipe-modal-close" aria-label="关闭">×</button>
       <h3 id="recipe-modal-title" class="recipe-modal-title"></h3>
       <p id="recipe-modal-meta" class="recipe-modal-meta"></p>
+      <h4 class="recipe-modal-section">食材</h4>
+      <ul id="recipe-modal-ingredients" class="recipe-modal-ingredients"></ul>
+      <h4 class="recipe-modal-section">做法</h4>
       <ol id="recipe-modal-steps" class="recipe-modal-steps"></ol>
     </div>
   </div>
